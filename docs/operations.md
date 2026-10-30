@@ -57,8 +57,32 @@ prompt_tokens 包含缓存时会减去 cached_tokens，cacheRead 单独记；com
 
 ## 升级、回滚与发布准备
 
-npm run test:pack 生成版本化 tgz 和 artifacts/manifest.json（SHA-256、npm integrity、文件清单和干净 profile 结果）。包保持 private=true、UNLICENSED；生成 tgz 不代表已发布 npm，也不代表具备对外发布许可。
+npm run test:pack 生成版本化 tgz 和 artifacts/manifest.json（SHA-256、npm integrity、文件清单和干净 profile 结果）。本插件已使用 MIT 许可公开发布，许可文本见仓库和归档内的 LICENSE。GitHub Release 提供版本化 tgz、release-manifest.json 和 SHA256SUMS；未发布 npm。源码中的 dist 同步提交，支持禁用安装脚本的 GitHub 安装。
 
-升级前保存当前包版本、配置和凭证引用。安装新包后先 config，再 auth/deployment；付费验证显式开启并限定预算。检查 provider/model ID 保持不变，再切换现有会话。回滚安装旧 tgz 并恢复旧配置；Token 缓存可丢弃后重新获取，不能导出明文 Token 作为回滚材料。
+升级前保存当前包版本和归档校验值，并备份目标 profile 的 package.json、pnpm-lock.yaml、cordis.patch.yml。备份应限制访问权限；SAP 配置只保存凭证引用，Token 保留在进程内。先核对下载归档与该 Release 的 SHA256SUMS，再安装。
 
-最终发布门槛还包含真实 Token 到期和 dsh-kagent S-L09 联调。后者依赖邻项目的可运行实现；独立 DSH 包及 S5 验收不等待 kagent。当前状态以 progress.md 和 acceptance.md 为准。
+桌面版先正常退出应用，再使用应用提供的 dsh 命令；其他 profile 将 desktop 换成实际名称：
+
+~~~sh
+dsh plugin --profile desktop add /absolute/path/NEW-PACKAGE.tgz --ignore-scripts
+~~~
+
+重新打开 DSH 后先运行 config，再运行 auth/deployment 诊断；付费验证显式开启并限定预算。检查 instance、provider 和 logical model ID 与升级前一致，再继续原会话。修改 wire model、Deployment 或其他路由参数时重新验证该 route 的能力声明。
+
+如果新版本有问题，正常退出桌面应用后安装已保存并核验过的上一版本：
+
+~~~sh
+dsh plugin --profile desktop add /absolute/path/PREVIOUS-PACKAGE.tgz --ignore-scripts
+~~~
+
+恢复该版本对应的 SAP 配置条目和凭证引用，再重新打开并执行 config/auth 检查。期间如有其他插件或配置更新，应逐项恢复 SAP 条目，保留其他变更。进程重启会重新获取 Token；回滚材料不需要明文 Token。回滚插件包不迁移或重写 DSH 会话存储。
+
+0.1.0-rc.1 是首个公开版本。首次安装的撤回可以在 DSH 插件管理器卸载，或退出桌面应用后运行下列命令，并移除 profile 中属于 sap-ai-core 的配置覆盖：
+
+~~~sh
+dsh plugin --profile desktop remove dsh-sap-ai-core
+~~~
+
+历史会话继续引用原 provider/model ID；重装时保留这些 ID。确需重命名时，为原 ID 保留兼容配置，或在新会话中选择新 ID；不要批量修改历史 JSONL。凭证引用可以保留供重装使用；彻底撤回时，通过 DSH 凭证服务单独删除本插件持有且不再被其他配置引用的项。
+
+当前独立发行是 0.1.0-rc.1 预发布候选。S5 自然到期长测和 S6 联合验收分别记录状态；kagent 的未关闭项见 kagent-platform-findings.md。独立 DSH 使用、S5 验收和候选版本交付不等待 kagent；完整阶段状态以 progress.md 和 acceptance.md 为准。
