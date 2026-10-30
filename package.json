@@ -2,8 +2,17 @@
   "name": "dsh-sap-ai-core",
   "version": "0.1.0-rc.1",
   "description": "Independent SAP AI Core Chat Completions provider for DeepSeek Harness",
-  "private": true,
-  "license": "UNLICENSED",
+  "license": "MIT",
+  "author": "solstice621",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/solstice621/dsh-sap-ai-core.git"
+  },
+  "homepage": "https://github.com/solstice621/dsh-sap-ai-core#readme",
+  "bugs": {
+    "url": "https://github.com/solstice621/dsh-sap-ai-core/issues"
+  },
+  "keywords": ["dsh-plugin", "deepseek-harness", "sap-ai-core", "llm", "qwen"],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -25,11 +34,19 @@
     "dist",
     "examples",
     "docs",
+    "cordis.patch.yml",
+    "LICENSE",
     "README.md",
     "NOTICE.md"
   ],
   "engines": {
-    "node": "24.19.0"
+    "node": ">=24.19.0 <25",
+    "dsh": "0.2.1-rc.5"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
   },
   "packageManager": "npm@11.17.0",
   "scripts": {
@@ -48,6 +65,9 @@
     "@deepseek-ai/cordis": "4.0.5",
     "@deepseek-ai/dsh-llm": "0.2.1-rc.5",
     "@deepseek-ai/dsh-credentials": "0.2.1-rc.5",
+    "@deepseek-ai/schemastery": "3.18.5",
+    "@deepseek-ai/dsh-credentials-local": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-launch-environment": "0.2.1-rc.5",
     "@deepseek-ai/dsh-agent": "0.2.1-rc.5",
     "@deepseek-ai/dsh-session": "0.2.1-rc.5",
     "@deepseek-ai/dsh-session-projection": "0.2.1-rc.5",
@@ -56,6 +76,12 @@
     "@deepseek-ai/dsh-system-prompt": "0.2.1-rc.5"
   },
   "peerDependenciesMeta": {
+    "@deepseek-ai/dsh-credentials-local": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-launch-environment": {
+      "optional": true
+    },
     "@deepseek-ai/dsh-agent": {
       "optional": true
     },
@@ -76,14 +102,14 @@
     }
   },
   "dependencies": {
-    "@deepseek-ai/dsh-credentials-local": "0.2.1-rc.5",
-    "@deepseek-ai/dsh-launch-environment": "0.2.1-rc.5",
-    "@deepseek-ai/schemastery": "3.18.5",
     "eventsource-parser": "3.0.6",
     "undici": "8.12.3",
     "zod": "4.4.3"
   },
   "devDependencies": {
+    "@deepseek-ai/dsh-credentials-local": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-launch-environment": "0.2.1-rc.5",
+    "@deepseek-ai/schemastery": "3.18.5",
     "@deepseek-ai/cordis": "4.0.5",
     "@deepseek-ai/dsh-llm": "0.2.1-rc.5",
     "@deepseek-ai/dsh-credentials": "0.2.1-rc.5",

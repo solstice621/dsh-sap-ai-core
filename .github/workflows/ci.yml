@@ -21,6 +21,7 @@ jobs:
       - run: npm run test:contract
       - run: npm run test:integration
       - run: npm run test:pack
+      - run: git diff --exit-code -- dist
       - uses: actions/upload-artifact@v4
         with:
           name: dsh-sap-ai-core

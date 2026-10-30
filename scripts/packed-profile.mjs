@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { Context } from '@deepseek-ai/cordis';
 import Loader from '@deepseek-ai/cordis-plugin-loader';
+import { loadProfileDirectory, composeEntries } from '@deepseek-ai/dsh-app-boot';
 import { createLaunchEnvironmentSnapshot } from '@deepseek-ai/dsh-launch-environment';
 import { createDiagnosticHost } from 'dsh-sap-ai-core/diagnostic-host';
 
@@ -34,17 +35,26 @@ try {
   ctx.provide('launchEnvironment', createLaunchEnvironmentSnapshot([{ source: 'process', values: environment }]));
   await ctx.plugin(Loader, { baseUrl: pathToFileURL(process.cwd() + '/').href });
   ctx.loader.enableLogs = false;
+  const bundleProfile = loadProfileDirectory('test-pack', process.cwd(), join(process.cwd(), 'package.json'), { userLayer: false });
+  assert.deepEqual(bundleProfile.skippedBundles, []);
+  const bundleEntries = composeEntries(bundleProfile.layers.map(layer => layer.patches));
+  const sapEntry = bundleEntries.find(entry => entry.name === 'dsh-sap-ai-core');
+  assert.ok(sapEntry, 'published dsh.bundle resolves to the plugin entry');
+  const sapId = sapEntry.id;
   const profile = [
     { id: 'credentials', name: '@deepseek-ai/dsh-credentials-local', config: { path: join(process.cwd(), 'empty-credentials.yaml'), watch: false } },
     { id: 'llm', name: '@deepseek-ai/dsh-llm' },
-    { id: 'sap-ai-core', name: 'dsh-sap-ai-core', config },
+    ...bundleEntries,
   ];
   await writeFile('profile.json', JSON.stringify(profile));
   await ctx.loader.root.update(JSON.parse(await readFile('profile.json', 'utf8'))); await ctx.loader.await();
   for (const entry of ctx.loader.entries()) { assert.ok(entry.fiber, 'profile entry imported'); await entry.fiber; }
+  assert.deepEqual(ctx.llm.listProviders(), []);
+  assert.equal(requests.length, 0, 'empty bundle configuration does not acquire credentials or call a model');
+  await ctx.loader.update(sapId, { config }); await ctx.loader.await();
   assert.equal(ctx.llm.listProviders()[0].id, 'sap-pack');
   assert.equal((await ctx.llm.listModels('sap-pack'))[0].id, 'packed-model');
-  assert.equal(ctx.llm.listConfigurableProviders()[0].settingsNs, 'sap-ai-core');
+  assert.equal(ctx.llm.listConfigurableProviders()[0].settingsNs, sapId);
   const run = async () => {
     const chunks = [];
     for await (const chunk of ctx.llm.stream({ provider: 'sap-pack', model: 'packed-model', maxTokens: 64, messages: [{ role: 'user', content: [{ type: 'text', text: 'synthetic packed test' }] }] })) chunks.push(chunk);
@@ -53,11 +63,11 @@ try {
   await run();
   const first = ctx.sapAiCore;
   const changed = structuredClone(config); changed.providers['sap-pack'].models[0].deployment.id = 'updated-deployment';
-  await ctx.loader.update('sap-ai-core', { config: changed }); await ctx.loader.await();
+  await ctx.loader.update(sapId, { config: changed }); await ctx.loader.await();
   assert.equal(ctx.sapAiCore, first); await run();
   assert.match(requests.at(-1).url, /updated-deployment/);
-  const fiber = ctx.loader.resolve('sap-ai-core').fiber;
-  ctx.loader.remove('sap-ai-core'); await fiber.dispose();
+  const fiber = ctx.loader.resolve(sapId).fiber;
+  ctx.loader.remove(sapId); await fiber.dispose();
   assert.deepEqual(ctx.llm.listProviders(), []); assert.deepEqual(ctx.llm.listConfigurableProviders(), []);
   const id = await ctx.loader.create({ name: 'dsh-sap-ai-core', config }); await ctx.loader.resolve(id).fiber;
   assert.equal(ctx.llm.listProviders()[0].id, 'sap-pack');
@@ -70,7 +80,7 @@ try {
       assert.equal(result.toolExecutions, 1); assert.equal(result.requests, 2);
     } finally { await host.close(); }
   }
-  console.log(JSON.stringify({ installedProfile: true, registration: true, selection: true, volatileUpdate: true, unloadReload: true, toolLoop: process.argv.includes('--agents') }));
+  console.log(JSON.stringify({ installedProfile: true, bundleComposition: true, emptyConfiguration: true, registration: true, selection: true, volatileUpdate: true, unloadReload: true, toolLoop: process.argv.includes('--agents') }));
 } finally {
   await ctx.fiber.dispose(); server.closeAllConnections(); await new Promise(resolve => server.close(resolve));
 }

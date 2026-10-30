@@ -50,7 +50,7 @@ SAP_AICORE_LIVE=1 npm run test:live:cn40 -- --connection .local/cn40-connection.
 ## 尚未关闭
 
 - S-L07：测试进程 PID 77644 已完成首次工具闭环并保留同一个 Agent/Token，预计 2026-10-31 12:45:03（Asia/Shanghai）后继续。状态在 .local/cn40-expiry-report.json，每分钟更新 heartbeat。等待中不标记通过。
-- S-L09 / S6 平台验收：邻目录已有实现和已验证 tgz，本机联合成功；实际 kagent UI、控制面及 Agent 间调用仍待就绪。独立 SAP 插件不导入邻项目内部模块。
+- S-L09 / S6 平台验收：本机联合、直接 UI 批准/拒绝、刷新、正确 usage 和取消已通过；父 Agent 委托并批准成功。父 Agent 的拒绝转发、累计 usage 和审批卡状态仍待平台修正。实际使用 11/12 请求、两个工具执行，临时会话、文件、Kubernetes 资源和端口转发均已清理，见 [平台记录](kagent-platform-findings.md)。独立 SAP 插件不导入邻项目内部模块。
 - 生产 Kubernetes、Secret 轮换、其他 SAP region/model、真实大 arguments、图片/structured output 等未扩展到已验证矩阵。
 - GitHub CI 配置已加入，尚未在远端 CI 执行；本机检查不能记为 GitHub CI 通过。
 

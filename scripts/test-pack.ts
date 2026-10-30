@@ -17,14 +17,17 @@ try {
   const archive = join(artifacts, packed.filename);
   assert.ok(packed.files.some(file => file.path === 'dist/index.js'));
   assert.ok(packed.files.some(file => file.path === 'dist/cli.js'));
-  for (const file of packed.files) assert.match(file.path, /^(?:dist\/|examples\/|docs\/|package\.json$|README\.md$|NOTICE\.md$)/);
+  assert.ok(packed.files.some(file => file.path === 'cordis.patch.yml'));
+  assert.ok(packed.files.some(file => file.path === 'LICENSE'));
+  for (const file of packed.files) assert.match(file.path, /^(?:dist\/|examples\/|docs\/|package\.json$|cordis\.patch\.yml$|LICENSE$|README\.md$|NOTICE\.md$)/);
   const dependencies: Record<string, string> = {
     'dsh-sap-ai-core': 'file:' + archive,
     '@deepseek-ai/cordis': '4.0.5', '@deepseek-ai/cordis-plugin-loader': '1.0.6',
+    '@deepseek-ai/dsh-app-boot': '0.2.1-rc.5',
     '@deepseek-ai/dsh-llm': '0.2.1-rc.5', '@deepseek-ai/dsh-credentials': '0.2.1-rc.5',
     '@deepseek-ai/dsh-credentials-local': '0.2.1-rc.5', '@deepseek-ai/dsh-launch-environment': '0.2.1-rc.5',
   };
-  const packageFile = () => JSON.stringify({ name: 'sap-clean-profile', version: '1.0.0', private: true, type: 'module', dependencies }, null, 2);
+  const packageFile = () => JSON.stringify({ name: 'sap-clean-profile', version: '1.0.0', private: true, type: 'module', dependencies, dsh: { profile: { bundles: ['dsh-sap-ai-core'] } } }, null, 2);
   await writeFile(join(directory, 'package.json'), packageFile());
   await copyFile(join(root, 'scripts/packed-profile.mjs'), join(directory, 'packed-profile.mjs'));
   await run('npm', ['install', '--ignore-scripts', '--no-audit', '--no-fund'], directory);
@@ -42,6 +45,7 @@ try {
     artifact: packed.filename, sha256: createHash('sha256').update(await readFile(archive)).digest('hex'), integrity: packed.integrity,
     node: process.version, dsh: '0.2.1-rc.5', validatedAt: new Date().toISOString(),
     cleanInstall: true, publishedImportsOnly: true, standaloneProfile: true, optionalAgentToolLoop: true, cliConfigCheck: true,
+    bundleComposition: true, emptyConfiguration: true, installScriptsDisabled: true,
     files: packed.files.map(file => file.path),
   };
   await writeFile(join(artifacts, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n');

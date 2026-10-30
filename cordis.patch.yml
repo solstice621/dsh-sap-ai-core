@@ -1,0 +1,6 @@
+- insert:
+    - id: sap-ai-core
+      name: dsh-sap-ai-core
+      config:
+        instances: {}
+        providers: {}

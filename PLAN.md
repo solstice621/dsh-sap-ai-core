@@ -2,9 +2,11 @@
 
 为 DeepSeek Harness 提供 SAP AI Core 模型接入插件，统一处理企业认证、短期 Token、Resource Group、Deployment 路由和 OpenAI 兼容 Chat Completions。cn40 Qwen 是第一个真实验证配置，地区、模型名称和部署编号都作为配置，而不是插件代码中的常量。
 
-日期：2026-10-30；实施更新：2026-10-31。状态：S0–S4 已实现并完成独立验证，S5 自然到期测试运行中，S6 已通过本机 BYO HTTP 联合测试，平台 UI/集群联合验收待完成。阶段事实与验证命令见 [docs/progress.md](docs/progress.md)，完整证据矩阵见 [验收记录](docs/acceptance.md)，主传输决策见 [ADR 001](docs/adr-001-transport.md)。下文保留完整验收目标；尚标注“拟定”的内容以实施记录为准。配套计划为 [dsh-kagent PLAN](../dsh-kagent/PLAN.md)；本插件不依赖 kagent，可以独立用于 DSH。
+日期：2026-10-30；实施更新：2026-10-31。状态：S0–S4 已实现并完成独立验证，S5 自然到期测试运行中；S6 本机 BYO HTTP、本地 Pod、直接平台 UI 的批准/拒绝、刷新和取消已验证，kagent 父 Agent 的拒绝转发、累计 usage 与审批卡状态仍待关闭。当前按用户要求交付独立插件的本地安装、GitHub 仓库和社区投稿。阶段事实与验证命令见 [docs/progress.md](docs/progress.md)，完整证据矩阵见 [验收记录](docs/acceptance.md)，主传输决策见 [ADR 001](docs/adr-001-transport.md)。下文保留完整验收目标；尚标注“拟定”的内容以实施记录为准。配套计划为 [dsh-kagent PLAN](../dsh-kagent/PLAN.md)；本插件不依赖 kagent，可以独立用于 DSH。
 
 ## 1 目标与支持范围
+
+独立桌面交付记录（2026-10-31）：0.1.0-rc.1 已通过桌面版自带 CLI 安装到 desktop profile，并以用户已有 cn40 实例配置 sap-ai-core-cn40 / qwen-cn40。DSH 0.2.1-rc.5 自带 Node 24.21.0 上的 37 项确定性测试通过；实际桌面进程中的一请求验证收到 11 个真实增量，usage=55（23 input + 32 output）。已保留原有插件、配置与凭证，仅新增独立 SAP credential refs；临时验收插件已从 profile 移除。桌面安装归档 SHA-256：8530892283267df37cb620343d59c793b27e08e3c743b6d20530b812aceba6cc。独立发行使用 MIT、GitHub 源码及预编译 tgz，不等待 kagent 的剩余平台项；S5/S6 状态仍按上文保留。
 
 安装插件后，用户选择一个 DSH provider 和逻辑模型，便能使用 SAP AI Core 上已经存在的模型 Deployment。插件负责 OAuth2 client credentials、Token 复用与刷新、推理地址选择、平台请求头、流式协议和错误转换，DSH 继续负责 Agent 循环及工具执行。
 

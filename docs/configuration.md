@@ -1,16 +1,18 @@
 # 配置与安装
 
-插件安装为普通 Cordis/DSH provider。已验证 Node 24.19.0、npm 11.17.0、DSH 0.2.1-rc.5 和 Cordis 4.0.5；其他版本不在当前支持声明中。
+插件安装为普通 Cordis/DSH provider。开发和独立验收基线为 Node 24.19.0、npm 11.17.0、DSH 0.2.1-rc.5 和 Cordis 4.0.5。声明 Node >=24.19.0 <25；DSH 版本仅声明精确的 0.2.1-rc.5。
 
 ## 安装和模型选择
 
-在承载 DSH profile 的 npm 环境安装构建产物：
+使用 DSH 插件安装界面安装 GitHub 仓库或 Release tgz。命令行方式如下；桌面版先正常退出应用，安装后重新打开：
 
 ~~~sh
-npm install /absolute/path/dsh-sap-ai-core-0.1.0-rc.1.tgz
+dsh plugin --profile desktop add github:solstice621/dsh-sap-ai-core#v0.1.0-rc.1
+# 或使用预编译归档
+dsh plugin --profile desktop add /absolute/path/dsh-sap-ai-core-0.1.0-rc.1.tgz
 ~~~
 
-已有 DSH profile 必须提供 llm 和 credentials 服务。将 [cn40 patch](../examples/cn40-qwen/cordis.patch.yml) 的插件条目加入 profile 的 cordis.patch.yml，填入已知的 OAuth host 与既有 Deployment ID。示例 provider 为 sap-ai-core-demo，逻辑模型为 qwen-demo。它们会进入 DSH provider/model 列表及 configurable-provider directory；界面只使用凭证引用，OAuth client secret 流程在 Node 进程运行。
+其他 CLI profile 使用其实际名称。bundle 自动注册 sap-ai-core 条目，初始 instances/providers 为空，不发网络请求。已有 DSH profile 必须提供 llm 和 credentials 服务。将 [cn40 patch](../examples/cn40-qwen/cordis.patch.yml) 的配置更新合并到 profile 的 cordis.patch.yml，填入已知的 OAuth host 与既有 Deployment ID。不要再次 insert 同一个插件。示例 provider 为 sap-ai-core-demo，逻辑模型为 qwen-demo。它们会进入 DSH provider/model 列表及 configurable-provider directory；界面只使用凭证引用，OAuth client secret 流程在 Node 进程运行。
 
 独立命令行诊断无需 kagent。在同一个安装目录中运行：
 
@@ -20,7 +22,7 @@ npm install /absolute/path/dsh-sap-ai-core-0.1.0-rc.1.tgz
   --provider sap-ai-core-demo --model qwen-demo --level config
 ~~~
 
-纯 llm/诊断安装只需要必需 peers；工具诊断额外需要这些精确版本的公开 DSH 包（完整 DSH profile 通常已提供）：
+完整 DSH profile 已提供所需服务。若只在普通 npm 目录使用独立诊断 CLI，另行安装 @deepseek-ai/dsh-credentials-local@0.2.1-rc.5 和 @deepseek-ai/dsh-launch-environment@0.2.1-rc.5 这两个可选 peers；它们负责本地凭证和诊断环境，不被复制到插件。工具诊断额外需要这些精确版本的公开 DSH 包：
 
 ~~~sh
 npm install @deepseek-ai/dsh-agent@0.2.1-rc.5 \
