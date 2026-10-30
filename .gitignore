@@ -1,0 +1,12 @@
+node_modules/
+dist/
+artifacts/
+.research/
+.local/
+.secrets/
+service-key*.json
+.env
+.env.*
+*.tgz
+coverage/
+.DS_Store

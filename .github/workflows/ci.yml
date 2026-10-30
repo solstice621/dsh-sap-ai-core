@@ -1,0 +1,27 @@
+name: deterministic-validation
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SAP_AICORE_LIVE: '0'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm install --global npm@11.17.0
+      - run: npm ci --ignore-scripts
+      - run: npm run typecheck
+      - run: npm run test:unit
+      - run: npm run test:contract
+      - run: npm run test:integration
+      - run: npm run test:pack
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dsh-sap-ai-core
+          path: artifacts/

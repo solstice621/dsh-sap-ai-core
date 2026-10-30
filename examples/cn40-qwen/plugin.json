@@ -1,0 +1,44 @@
+{
+  "instances": {
+    "company-cn40": {
+      "apiBaseUrl": "https://api.ai.prod-cn40.cn-shanghai.ali.ml.sapcloud.cn",
+      "tokenUrl": "https://REPLACE_WITH_AUTH_HOST/oauth/token",
+      "credentials": { "clientIdRef": "SAP_AICORE_CLIENT_ID", "clientSecretRef": "SAP_AICORE_CLIENT_SECRET" },
+      "oauth": { "clientAuthMethod": "body" },
+      "network": { "proxyMode": "environment", "requestTimeoutMs": 90000, "streamIdleTimeoutMs": 30000 }
+    }
+  },
+  "providers": {
+    "sap-ai-core-demo": {
+      "instance": "company-cn40",
+      "displayName": "SAP AI Core cn40",
+      "resourceGroup": "default",
+      "protocol": "openai-chat-completions",
+      "apiVersion": "2023-12-01-preview",
+      "retryPolicy": { "maxRetries": 3, "initialDelayMs": 1000, "maxDelayMs": 30000, "jitterRatio": 0.2 },
+      "authRecovery": true,
+      "models": [{
+        "id": "qwen-demo",
+        "name": "Qwen via SAP AI Core cn40",
+        "upstreamModel": "qwen3.6-plus",
+        "deployment": { "id": "REPLACE_WITH_RUNNING_DEPLOYMENT" },
+        "mode": "streaming",
+        "capabilities": {
+          "streaming": true,
+          "tools": true,
+          "parallelToolCalls": true,
+          "evidence": { "status": "verified", "reference": "docs/compatibility.md: cn40 qwen3.6-plus reference route, 2026-10-31; revalidate a replacement deployment" }
+        },
+        "compatibility": {
+          "systemRole": "system",
+          "developerRole": "system",
+          "maxTokensField": "max_tokens",
+          "includeUsage": true,
+          "parameters": { "enable_thinking": false }
+        },
+        "maxOutputTokens": 128,
+        "defaultMaxTokens": 128
+      }]
+    }
+  }
+}

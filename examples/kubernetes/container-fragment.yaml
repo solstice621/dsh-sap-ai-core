@@ -1,0 +1,44 @@
+# Pod container fragment. References existing Secret and ConfigMap; creates no resources.
+env:
+  - name: SAP_AICORE_CLIENT_ID
+    valueFrom:
+      secretKeyRef:
+        name: sap-ai-core-credentials
+        key: clientId
+  - name: SAP_AICORE_CLIENT_SECRET
+    valueFrom:
+      secretKeyRef:
+        name: sap-ai-core-credentials
+        key: clientSecret
+  - name: HTTPS_PROXY
+    value: http://REPLACE_WITH_CLUSTER_PROXY:8080
+  - name: HTTP_PROXY
+    value: http://REPLACE_WITH_CLUSTER_PROXY:8080
+  - name: NO_PROXY
+    value: localhost,127.0.0.1,.svc,.cluster.local
+volumeMounts:
+  - name: sap-ai-core-config
+    mountPath: /etc/dsh/sap-ai-core
+    readOnly: true
+# Local config and reference presence only; no OAuth or inference.
+livenessProbe:
+  exec:
+    command:
+      - node
+      - /app/node_modules/dsh-sap-ai-core/dist/cli.js
+      - --config
+      - /etc/dsh/sap-ai-core/plugin.json
+      - --provider
+      - sap-ai-core-demo
+      - --model
+      - qwen-demo
+      - --level
+      - config
+  initialDelaySeconds: 20
+  periodSeconds: 60
+  timeoutSeconds: 10
+# At Pod spec level, add:
+# volumes:
+#   - name: sap-ai-core-config
+#     configMap:
+#       name: sap-ai-core-config

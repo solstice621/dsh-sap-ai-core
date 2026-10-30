@@ -1,0 +1,26 @@
+{
+  "instances": {
+    "company-demo": {
+      "apiBaseUrl": "https://API_HOST.example",
+      "tokenUrl": "https://AUTH_HOST.example/oauth/token",
+      "credentials": { "clientIdRef": "SAP_AICORE_CLIENT_ID", "clientSecretRef": "SAP_AICORE_CLIENT_SECRET" },
+      "oauth": { "clientAuthMethod": "body" },
+      "network": { "proxyMode": "environment" }
+    }
+  },
+  "providers": {
+    "sap-ai-core-demo": {
+      "instance": "company-demo",
+      "resourceGroup": "default",
+      "protocol": "openai-chat-completions",
+      "models": [{
+        "id": "model-demo",
+        "upstreamModel": "REPLACE_WITH_VERIFIED_MODEL",
+        "deployment": { "id": "REPLACE_WITH_RUNNING_DEPLOYMENT" },
+        "mode": "buffered",
+        "capabilities": { "evidence": { "status": "experimental", "reference": "Validate this exact route before enabling capabilities" } },
+        "compatibility": { "maxTokensField": "unsupported" }
+      }]
+    }
+  }
+}
