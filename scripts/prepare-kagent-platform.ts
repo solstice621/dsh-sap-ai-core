@@ -12,8 +12,11 @@ const { values } = parseArgs({ options: {
   out: { type: 'string', default: '.local/kagent-platform' },
   namespace: { type: 'string', default: 'kagent' }, 'agent-name': { type: 'string', default: 'sap-cn40-check' },
   'principal-id': { type: 'string', default: 'admin@kagent.dev' },
+  'request-budget': { type: 'string', default: '12' },
 }, strict: true, allowPositionals: false });
 if (!values.config || !values.provider || !values.model || !values['sap-package'] || !values['kagent-package']) throw new Error('Specify config, provider, model, sap-package, and kagent-package.');
+const requestBudget = Number(values['request-budget']);
+assert.ok(Number.isSafeInteger(requestBudget) && requestBudget >= 1 && requestBudget <= 12, 'request-budget must be an integer from 1 to 12.');
 for (const identifier of [values.namespace, values['agent-name']]) assert.match(identifier, /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/);
 const root = process.cwd(), output = resolve(values.out), build = join(output, 'build');
 const LF = String.fromCharCode(10);
@@ -26,7 +29,7 @@ const sha = (bytes: Buffer) => createHash('sha256').update(bytes).digest('hex');
 const sapBytes = await readFile(resolve(values['sap-package']));
 const kagentBytes = await readFile(resolve(values['kagent-package']));
 const monitorBytes = await readFile(join(root, 'scripts/platform-monitor.mjs'));
-const image = 'dsh-sap-ai-core-kagent:acceptance-' + sha(sapBytes).slice(0,8) + '-' + sha(kagentBytes).slice(0,8) + '-' + sha(monitorBytes).slice(0,8);
+const imagePrefix = 'dsh-sap-ai-core-kagent:acceptance-' + sha(sapBytes).slice(0,8) + '-' + sha(kagentBytes).slice(0,8) + '-' + sha(monitorBytes).slice(0,8);
 const snapshot = snapshotOf(JSON.parse(await readFile(resolve(values.config), 'utf8')));
 const route = routeOf(snapshot, values.provider, values.model);
 assert.equal(route.model.upstreamModel, 'qwen3.6-plus', 'This fixture is only for the verified cn40 model.');
@@ -43,14 +46,14 @@ const plugin = { instances: { [provider.instance]: instance }, providers: { [val
 snapshotOf(plugin);
 const credentialRefs = [instance.credentials.clientIdRef, instance.credentials.clientSecretRef];
 const runtimePlugins = [
-  { name: 'file:///opt/dsh/monitor.mjs', config: { credentialRefs, maxRequests: 12 } },
+  { name: 'file:///opt/dsh/monitor.mjs', config: { credentialRefs, maxRequests: requestBudget } },
   { name: '@deepseek-ai/dsh-credentials-local', config: { path: '/tmp/sap-empty-credentials.yaml', watch: false } },
   { name: 'dsh-sap-ai-core', config: plugin },
 ];
 const agentName = values['agent-name'];
 const helmValues = {
   agentName, principalId: values['principal-id'],
-  image: { repository: image.split(':')[0], tag: image.split(':')[1], pullPolicy: 'Never' },
+  image: { repository: imagePrefix.split(':')[0], tag: imagePrefix.split(':')[1], pullPolicy: 'Never' },
   auth: { existingSecret: agentName + '-auth', tokenKey: 'token' },
   persistence: { size: '256Mi' },
   runtimePlugins, model: { provider: values.provider, name: values.model },
@@ -65,15 +68,21 @@ const helmValues = {
     { name: 'NO_PROXY', value: 'localhost,127.0.0.1,.svc,.cluster.local' },
   ],
 };
-await writeFile(join(output, 'values.json'), JSON.stringify(helmValues, null, 2) + LF, { mode: 0o600 });
 await writeFile(join(build, 'sap.tgz'), sapBytes);
 await writeFile(join(build, 'kagent.tgz'), kagentBytes);
 await copyFile(join(root, 'scripts/platform-monitor.mjs'), join(build, 'monitor.mjs'));
 await writeFile(join(build, 'package.json'), JSON.stringify({ name: 'sap-kagent-platform-acceptance', version: '1.0.0', private: true, type: 'module', dependencies: {
   'dsh-sap-ai-core': 'file:./sap.tgz', 'dsh-kagent': 'file:./kagent.tgz',
   '@deepseek-ai/dsh-launch-environment': '0.2.1-rc.5',
+  // This fixture loads the credential store explicitly; the SAP plugin only
+  // declares it as an optional peer for callers that choose local storage.
+  '@deepseek-ai/dsh-credentials-local': '0.2.1-rc.5',
 } }, null, 2) + LF);
 await run('npm', ['install', '--package-lock-only', '--ignore-scripts', '--no-audit', '--no-fund'], build);
+const runtimeLockSha256 = sha(await readFile(join(build, 'package-lock.json')));
+const image = imagePrefix + '-' + runtimeLockSha256.slice(0,8);
+helmValues.image.tag = image.split(':')[1];
+await writeFile(join(output, 'values.json'), JSON.stringify(helmValues, null, 2) + LF, { mode: 0o600 });
 await writeFile(join(build, 'Dockerfile'), [
   'FROM node:24.19.0-bookworm-slim@sha256:a9f5f7c91a432850b2a8a7797adf5eadb6c733ceed61167806cee7ea7fbc29df',
   'WORKDIR /opt/dsh', 'ENV NODE_ENV=production',
@@ -87,7 +96,7 @@ await run('docker', ['build', '--tag', image, '.'], build, 240_000);
 const imageId = (await run('docker', ['image', 'inspect', '--format', '{{.Id}}', image])).stdout.trim();
 const report = { preparedAt: new Date().toISOString(), image, imageId, namespace: values.namespace, agentName,
   packageSha256: { sap: sha(sapBytes), kagent: sha(kagentBytes) }, monitorSha256: sha(monitorBytes),
-  requestBudget: 12, maxOutputTokensPerRequest: 128, valuesFile: join(output, 'values.json'),
+  runtimeLockSha256, requestBudget, maxOutputTokensPerRequest: 128, valuesFile: join(output, 'values.json'),
   readsServiceKey: false, deploysResources: false, inferencePerformed: false,
 };
 await writeFile(join(output, 'prepared.json'), JSON.stringify(report, null, 2) + LF, { mode: 0o600 });

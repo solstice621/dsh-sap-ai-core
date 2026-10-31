@@ -1,6 +1,6 @@
 # dsh-kagent 联调边界
 
-SAP 插件可以独立用于 DSH。2026-10-31 00:48（Asia/Shanghai）已将两个 tgz 安装进全新临时目录，完成真实 cn40 的本机 BYO HTTP 联合验证。01:19–02:11 的实际平台验收通过直接 UI 批准/拒绝、刷新、usage、取消和父 Agent 委托批准。父 Agent 的拒绝转发、累计 usage 与审批卡状态仍未关闭，见 [平台验收发现](kagent-platform-findings.md)。S6 尚未通过。
+SAP 插件可以独立用于 DSH，本页仅保留可选联合测试。2026-10-31 00:48（Asia/Shanghai）两个 tgz 在全新临时目录完成真实 cn40 的本机 BYO HTTP 验证；01:19–02:11 通过直接 UI 批准/拒绝、刷新、usage、取消和父 Agent 委托批准。后续隔离候选的父批准、累计 usage 与审批卡也已验证，父拒绝未提交。按用户范围纠正停止平台测试并清理资源，见 [平台记录](kagent-platform-findings.md)。S6 指独立打包与交付，不以本页结果为门槛。
 
 同一个 DSH profile 挂载两个插件，kagent 仅选择 provider=sap-ai-core-demo、model=qwen-demo；SAP 凭证、Resource Group、wire model、Deployment 由 SAP 插件配置。两边不导入彼此内部模块。
 
@@ -10,9 +10,9 @@ kagent 通过公开 DSH agents 创建 Agent，提供工具及审批，向 Agent 
 
 已测输入包 SHA-256：SAP 858a8e039ceeec0620122a8c9a477988908300b0d2e369a3b0509acd2f250025；kagent cc6a38891dc31055d1103c57272909fdb5f1c733541b7f5d703ea9e23d5c2c9a。测试后只保存脱敏统计至 .local/kagent-joint-report.json；临时安装、会话数据和受控文件均已删除。后续交付包仅更新文档/清单时其归档 SHA 会变化，运行时代码证据另见 compatibility.md。
 
-S-L09 剩余复验针对父 Agent 的拒绝转发、累计 usage 与审批卡最终状态。JSON-RPC 数据结构通过不等于 UI 通过。记录版本和脱敏统计，不记录凭证或业务工具参数。
+S-L09 尚未验证的父拒绝转发属于平台职责，只有另行要求联合工作时才继续。JSON-RPC 数据结构通过不等于 UI 通过。记录版本和脱敏统计，不记录凭证或业务工具参数。
 
-S-L09 不作为独立 S5 或独立插件发布的前置条件。父 Agent 问题复验关闭前，不标记 S6 或整个项目完成。
+S-L09 不作为独立 S5、S6、插件发布或本插件完成的前置条件。模型插件负责传输工具调用与结果，DSH/kagent 负责工具执行、审批、父子任务和页面状态。
 
 ## 平台验收准备
 
@@ -23,10 +23,13 @@ node --import tsx scripts/prepare-kagent-platform.ts \
   --config .local/cn40-plugin.json --provider sap-ai-core-cn40 --model qwen-cn40 \
   --sap-package artifacts/dsh-sap-ai-core-0.1.0-rc.1.tgz \
   --kagent-package ../dsh-kagent/.cache/pack/dsh-kagent-0.1.0.tgz \
-  --out .local/kagent-platform --namespace kagent --agent-name sap-cn40-check
+  --out .local/kagent-platform --namespace kagent --agent-name sap-cn40-check \
+  --request-budget 6
 ~~~
 
-镜像仅使用已安装包的公开入口。验收 monitor 经 DSH plugin API 提供明确环境凭证引用、128-token 单请求上限、最多 12 次模型请求及脱敏统计；仅允许指定的合成文件 write，审批仍由真实 DSH/kagent 完成。Pod 更新时从持久卷恢复已使用的预算和统计，不因重启清零。该 monitor 是测试夹具，不是插件的生产依赖。健康检查不发模型请求。
+镜像仅使用已安装包的公开入口。夹具显式安装自己加载的 credentials-local 和 launch-environment；SAP 发布包将本地凭证存储声明为可选 peer，独立宿主需自行提供。镜像标签和 prepared.json 包含该运行环境 lockfile 的 SHA-256，宿主依赖改变时使用不同标签。
+
+验收 monitor 经 DSH plugin API 提供明确环境凭证引用、128-token 单请求上限和脱敏统计。request-budget 允许 1–12，默认 12；上例限制为 6 次模型请求。仅允许指定的合成文件 write，审批仍由真实 DSH/kagent 完成。Pod 更新时从持久卷恢复已使用的预算和统计，不因重启清零。该 monitor 是测试夹具，不是插件的生产依赖。健康检查不发模型请求。
 
 生成的 values 引用独立的 sap-cn40-check-auth 和 sap-cn40-check-sap Secret；凭证应通过显式本地 kubeconfig 和 stdin 创建，不保存 Secret manifest。只在已授权的本地 kind 集群、已安装并验证的平台补丁上部署；不得使用本机默认公司 kube context。验收后读取 /var/lib/dsh/sap-acceptance.json 的统计，再删除自己的 Agent、Secret、ConfigMap 和 PVC，保留其他测试资源。kindnet 不执行 NetworkPolicy，准备文件关闭了该本地夹具的策略，不能将其当作生产网络配置。
 

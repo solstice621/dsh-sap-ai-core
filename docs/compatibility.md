@@ -23,13 +23,13 @@
 | reasoning replay | cn40 不需要；mock 隔离已验证 | 工具回传不带原生 reasoning 也成功 |
 | stop、temperature | 真实未验证，示例关闭 | 插件仅在明确能力配置下发送 |
 | 图片、structured output | 首版不支持 | 明确拒绝 |
-| Token 自然到期的新步骤 | 运行中 | 同一进程保留会话，预计 2026-10-31 12:45（Asia/Shanghai）后验证；不缩短本地窗口 |
+| Token 自然到期的新步骤 | 未通过，测试已退出 | 2026-10-31 12:45 刷新认证发生 TRANSPORT 错误，generation=2 未验证；不以直连短测替代 |
 | cn40 discovery 唯一选择 | 列表形状探针 + mock | 完整分页与零/一/多候选为确定性测试；live 推理固定 ID |
-| 企业代理/TLS | 本机、kind Pod 及 mock 已验证 | 公司代理可达；环境代理分流有本地网络证据，Pod 的 auth/deployment/stream 已通过 |
+| 企业代理/TLS、请求级直连 | 代理历史验证通过；当前直连已验证 | 长测恢复时公司代理 DNS 失败；随后 direct auth/stream 成功，11 增量、usage=55，TLS 校验开启 |
 | Kubernetes Secret 引用与只读根目录 | 本地 kind 已验证 | 真实凭证通过临时 Secret 引用，非 root 容器成功；临时 Namespace/Secret 已删除 |
 | Kubernetes Secret 轮换 / 生产集群 | 未验证 | 环境注入更新通常需重启，未修改真实 service key |
 | dsh-kagent BYO HTTP 联调 | 已验证 | 两个 tgz，7 次真实请求，批准/拒绝、工具 ID、会话续接、A2A 取消贯通 |
-| kagent 平台 UI / Agent 间调用 | 未验证 | 本机 BYO JSON-RPC 不替代实际平台界面和控制面验收 |
+| kagent 平台 UI / Agent 间调用（可选） | 部分已验证，停止扩大 | 直接 UI 与父批准通过，隔离候选的父 usage/审批卡通过；父拒绝未提交。非本插件验收门槛 |
 
 S5 短验收使用实际发布的 DSH 包和本插件实现，不使用 mock 代替真实 Qwen。11 次模型请求中 10 次完成、1 次主动取消；已返回权威 usage 的请求共 2131 tokens，其中输出 185。被取消请求没有尾部 usage，其费用未知，不计作零。
 

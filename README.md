@@ -2,7 +2,9 @@
 
 SAP AI Core 的独立 DSH 模型插件。负责 OAuth、Token 缓存与轮换、Deployment 路由、OpenAI 兼容 Chat Completions、真实 SSE、工具增量、usage、错误和取消；Agent 循环与工具执行由 DSH 完成。
 
-首个已验证环境是 cn40 qwen3.6-plus。中文多轮、流式、同一响应两个工具调用、工具回传、取消及并发已通过真实验证；本机 BYO HTTP 与本地 Kubernetes 的真实调用也已通过。Token 自然到期测试运行中，kagent 父 Agent 的联合验收仍有未关闭项。完整状态见 [验收记录](docs/acceptance.md) 和 [实施进度](docs/progress.md)。
+首个已验证环境是 cn40 qwen3.6-plus。中文多轮、流式、同一响应两个工具调用、工具回传、取消及并发已通过真实验证；独立候选版已安装到本地 DSH 并发布 GitHub Release，社区投稿待审核。Token 自然到期长测因刷新认证时网络失败而退出，尚未通过；随后直连认证和真实流式检查成功。kagent 的父 Agent 审批、页面恢复与平台任务管理属于可选集成，不作为本插件完成条件。完整状态见 [验收记录](docs/acceptance.md) 和 [实施进度](docs/progress.md)。
+
+插件支持多个模型，DSH 选择器展示配置的逻辑模型及其对应部署。SAP 模型目录不等于当前账号已部署、可直接调用的模型；cn40 当前的目录、部署及接口边界见 [模型目录说明](docs/configuration.md#模型目录与可调用模型)。
 
 ## 使用
 
@@ -70,7 +72,7 @@ SAP_AICORE_LIVE=1 npm run test:live:cn40 -- --connection .local/cn40-connection.
 SAP_AICORE_LIVE=1 npm run test:live:expiry -- --connection .local/cn40-connection.json
 ~~~
 
-本机 BYO 联合测试：
+可选的本机 BYO 联合测试（不属于独立插件验收门槛）：
 
 ~~~sh
 SAP_AICORE_LIVE=1 node --import tsx scripts/test-kagent-live.ts \

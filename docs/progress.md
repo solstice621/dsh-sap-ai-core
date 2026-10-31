@@ -1,6 +1,6 @@
 # 实施记录
 
-更新：2026-10-31。S0–S4 的实现与独立验证已完成；S5 仍等待真实 Token 自然到期；S6 已完成本机 BYO HTTP、直接平台 UI 和父 Agent 批准验证，父 Agent 的三项平台问题待关闭。独立插件已安装到本机 DSH Desktop，已推送公开 MIT 仓库并发布 v0.1.0-rc.1；GitHub CI 和从 GitHub 禁用脚本的安装验证通过，社区 PR #10730 等待仓库满一天及维护者审核。完整测试映射与交付链接见 [验收记录](acceptance.md)，真实能力边界见 [兼容矩阵](compatibility.md)。
+更新：2026-10-31。S0–S4 的实现与独立验证已完成；S5 短验收通过，Token 自然到期长测在刷新认证时网络失败，已退出。S6 的独立候选版已安装到本机 DSH Desktop，已推送公开 MIT 仓库并发布 v0.1.0-rc.1；GitHub CI 和从 GitHub 禁用脚本的安装验证通过，社区 PR #10730 等待仓库满一天及维护者审核。按用户明确的范围，kagent 父 Agent 审批、拒绝转发、页面恢复和平台生命周期仅保留可选记录，不再阻塞本插件。完整测试映射与交付链接见 [验收记录](acceptance.md)，真实能力边界见 [兼容矩阵](compatibility.md)。
 
 | 阶段 | 状态与交付 | 验证与未关闭事项 |
 | --- | --- | --- |
@@ -9,8 +9,8 @@
 | S2 | 完成：Token 缓存、单飞、waiter 取消、凭证代次、迟到 401 及 DSH 失败步骤有界恢复 | 本地 OAuth mock 和两种 DSH waterfall 顺序通过；自然到期的真实验收单列在 S5，不以 mock 替代 |
 | S3 | 完成：消息、工具 JSON、SSE、usage、replay、错误和请求级取消 | 多字节拆包、交错工具、尾部 usage、失败 usage、缺失 DONE、buffered 拒绝、路由隔离和真实 DSH 工具闭环通过 |
 | S4 | 完成：唯一发现与分页、能力校验、分级诊断、示例和运维文档 | config/auth/deployment 无推理；付费诊断显式预算；本地 kind 的 Secret 引用、环境代理、non-root/只读根目录及真实 stream 通过；生产集群与 Secret 轮换未验证 |
-| S5 | 进行中：S-L01、02、03、04、05、06、08 已通过最终真实回归 | 11 次模型请求，中文多轮、15 个流式增量、多工具回传、取消后恢复及双会话单飞通过；S-L07 保留原进程等待自然到期 |
-| S6 | 进行中：两个 tgz 的本机 BYO HTTP 联调、直接 UI 批准/拒绝、刷新、usage、取消和父 Agent 批准通过 | 平台 11 次请求；父 Agent 拒绝转发、累计 usage 与审批卡状态待关闭，见 kagent-platform-findings.md。临时资源已清理 |
+| S5 | 短验收通过，S-L07 尚未通过：S-L01、02、03、04、05、06、08 已有真实回归 | 11 次请求验证中文多轮、真实增量、多工具回传、取消后恢复及并发；长测第三 attempt 在 auth 阶段发生 TRANSPORT 错误并退出 |
+| S6 | 独立候选版交付完成；社区上架审核中 | 干净打包安装、本地 Desktop、公开源码、Release 和社区投稿已完成；既有 rc.1 tag/归档保持不变。平台联合验收不作为门槛 |
 
 ## 当前工作树验证
 
@@ -37,10 +37,20 @@ SAP_AICORE_LIVE=1 npm run test:live:expiry -- --connection .local/cn40-connectio
 
 本机联合脚本 scripts/test-kagent-live.ts 于 00:48 通过，两个插件均从 tgz 安装，使用 7/8 请求预算；已知 usage 为 8584 total / 92 output。脚本 scripts/test-kubernetes-live.ts 于 00:53 在明确指定的本地 kind context 通过，1/1 请求，67 total / 44 output。各入口与必要参数已同步 README。证据分别为 .local/kagent-joint-report.json 和 .local/kubernetes-live-report.json；临时安装、会话、文件、Namespace 和 Secret 均已清理。kindnet 不执行 NetworkPolicy，此结果不证明网络隔离。
 
-## 正在等待与后续验收
+## 自然到期终态与网络恢复
 
-S-L07 于 00:44 启动，PID 77644 已完成首次工具闭环：2/4 请求、工具执行一次。同一进程保留 DSH Agent 和内存 Token，依据权威 expires_in 加 60 秒，预计 2026-10-31 12:45:03（Asia/Shanghai）恢复。每分钟更新 .local/cn40-expiry-report.json。测试将核对 Token generation 更新、acquisitions=2、旧工具结果仍可用且工具未重放。当前状态为 waiting-for-natural-expiry，不能标记 S5 完成，也不要重启这个长测。
+S-L07 于 00:44 启动，首次工具闭环使用两次请求、执行一次工具。2026-10-31 12:45:03（Asia/Shanghai）等待自然到期后恢复，第三 attempt 在 auth 阶段 16 ms 内以 TRANSPORT 失败；进程 exit 1，最终为 failed、3/4 请求，未取得 generation=2。原进程已退出，不能将其表述为仍在等待，也不能用重新创建的会话冒充原长测恢复。证据为 .local/cn40-expiry-report.json。
 
-相邻 dsh-kagent 当前已有实现、已验证 tgz 和本地运行环境。本项目仅消费其公开 runtime 导出，未修改邻项目或导入其内部源码。平台通过独立 sap-cn40-check Agent 使用 11/12 请求、两个工具执行完成已列场景；已知 total=14339 / output=226，一次取消 usage 未知。首轮直接 UI 的 usage 重复与刷新历史缺失已复验关闭；父 Agent 的三项问题详见 kagent-platform-findings.md。7 个验收会话、后端状态、临时 Kubernetes 资源和端口转发全部清理；独立 S5 不等待该联合项。
+同期配置的公司代理 DNS 解析失败。使用独立的 proxyMode=direct 配置后，无推理 auth 检查通过；再以桌面配置在项目诊断宿主执行一次 32-output-token 的 stream 检查，收到 11 个真实增量、usage=55，TLS 验证保持开启。本地 desktop profile 的 SAP 网络配置已备份并切换为直连，应用已正常重启；没有修改系统网络。证据为 .local/cn40-network-after-expiry.json、.local/cn40-direct-auth-report.json、.local/cn40-direct-stream-report.json 和 .local/desktop-install/direct-network-update.json。此结果证明当前连接可用，不替代自然到期验收；本轮没有重新启动长测。
+
+独立诊断使用项目宿主提供的 DSH peers。直接用普通 node 执行 desktop 插件目录里的 CLI 会缺少由桌面宿主提供的 @deepseek-ai/cordis；该尝试在网络前退出，没有产生模型请求。不要把它当作桌面宿主加载失败，独立 CLI 的依赖要求见 configuration.md。
+
+随后只读查询 cn40 模型目录和 default 资源组的完整部署列表：六个目录项中，只有 qwen3.6-plus 已有对应的 RUNNING foundation-models 部署；另一个部署属于 orchestration。没有创建部署或新增推理请求。本地和示例显示名已明确为 Qwen 3.6 Plus，provider/model ID 保持不变；多模型配置与目录边界见 configuration.md，脱敏查询记录为 .local/cn40-model-catalog-report.json。本轮类型检查、示例与本地 JSON 配置 schema 检查、git diff --check 通过；未重新打包覆盖已发布 rc.1 归档。
+
+## 可选平台记录与范围收尾
+
+早期平台轮次使用 11/12 请求、两个工具执行，已知 total=14339 / output=226，一次取消 usage 未知；对应 7 个会话和资源已清理。后续隔离候选使用 3/6 请求，批准链路中父/子均 completed，父 usage=2834 与两个 SAP attempts 之和一致，审批卡正确显示 Approved；拒绝尚未提交，不记为通过。按用户范围纠正停止平台工作，明确取消仍等待的父任务，删除四个测试会话后 backend sessions/tasks/approvals 均为零，工作目录为空；sap-cn40-r3-* 资源、专属 Secret/PVC 和两个端口转发均已清理。原 kagent-ui 的 UID/spec 未改变，原生 Web 18084 保持运行。证据见 .local/kagent-platform-v3/scope-cleanup-*.json 和 [平台记录](kagent-platform-findings.md)。
+
+保留已验证的可选镜像夹具修复：显式安装 credentials-local、支持 1–12 请求预算，并将宿主 lockfile 摘要加入镜像标签。未修改相邻项目源码，不继续新增父/子 Agent 验收。
 
 真实凭证沿用用户指定的 cn40 指南和 service key，未复制进项目。Token 只在进程内存；本机报告只保存脱敏事实，.local 不进入 Git/tgz。当前实测范围仅为指定 cn40 Qwen route；其他地区/模型、图片、structured output、生产集群和 Secret 轮换不在已验证声明中。

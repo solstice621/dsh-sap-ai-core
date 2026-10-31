@@ -85,4 +85,4 @@ dsh plugin --profile desktop remove dsh-sap-ai-core
 
 历史会话继续引用原 provider/model ID；重装时保留这些 ID。确需重命名时，为原 ID 保留兼容配置，或在新会话中选择新 ID；不要批量修改历史 JSONL。凭证引用可以保留供重装使用；彻底撤回时，通过 DSH 凭证服务单独删除本插件持有且不再被其他配置引用的项。
 
-当前独立发行是 0.1.0-rc.1 预发布候选。S5 自然到期长测和 S6 联合验收分别记录状态；kagent 的未关闭项见 kagent-platform-findings.md。独立 DSH 使用、S5 验收和候选版本交付不等待 kagent；完整阶段状态以 progress.md 和 acceptance.md 为准。
+当前独立发行是 0.1.0-rc.1 预发布候选；其已发布 tag、归档及校验值不随后续文档更新而覆盖。S5 自然到期长测在认证网络失败后已退出，直连短测成功但不替代自然到期验证。S6 为独立打包与交付；kagent 父 Agent 的审批、页面恢复和平台生命周期属于可选集成，不作为本插件完成条件。社区投稿尚待审核，完整状态以 progress.md 和 acceptance.md 为准。

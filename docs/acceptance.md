@@ -1,6 +1,6 @@
 # 验收记录
 
-日期：2026-10-31。完整目标仍按 PLAN.md；此记录区分确定性测试、真实验证和外部待办。
+日期：2026-10-31。独立模型插件目标按 PLAN.md；kagent 平台联合记录不作为本插件完成条件。此记录区分确定性测试、真实验证和外部待办。
 
 ## 确定性矩阵
 
@@ -59,8 +59,8 @@ SAP_AICORE_LIVE=1 npm run test:live:cn40 -- --connection .local/cn40-connection.
 
 ## 尚未关闭
 
-- S-L07：测试进程 PID 77644 已完成首次工具闭环并保留同一个 Agent/Token，预计 2026-10-31 12:45:03（Asia/Shanghai）后继续。状态在 .local/cn40-expiry-report.json，每分钟更新 heartbeat。等待中不标记通过。
-- S-L09 / S6 平台验收：本机联合、直接 UI 批准/拒绝、刷新、正确 usage 和取消已通过；父 Agent 委托并批准成功。父 Agent 的拒绝转发、累计 usage 和审批卡状态仍待平台修正。实际使用 11/12 请求、两个工具执行，临时会话、文件、Kubernetes 资源和端口转发均已清理，见 [平台记录](kagent-platform-findings.md)。独立 SAP 插件不导入邻项目内部模块。
+- S-L07：2026-10-31 12:45:03（Asia/Shanghai）自然到期后第三 attempt 在 auth 阶段发生 TRANSPORT 错误，进程 exit 1；最终 3/4 请求，generation=2 未验证。同期公司代理 DNS 失败，随后直连 auth 和一次真实 stream 检查通过（11 增量、usage=55）。原长测已经退出；没有重新启动，不能以直连短测替代到期验收。
+- S-L09（可选平台记录，停止扩大）：此前直接 UI 和本机 BYO 链路通过；隔离候选的父批准、累计 usage=2834 与审批卡状态已验证。父拒绝尚未提交，不标通过。当前临时任务、四个会话、backend 状态、资源和端口转发已清理，见 [平台记录](kagent-platform-findings.md)。该项不阻塞独立插件 S5/S6 或完成判定。
 - 生产 Kubernetes、Secret 轮换、其他 SAP region/model、真实大 arguments、图片/structured output 等未扩展到已验证矩阵。
 
-上述项目保留在原 PLAN 中；独立包构建成功不代表整个 S0–S6 完成。
+候选发行与社区上架分别记录；S-L07 尚未通过，不能宣称全部真实验收完成。其他 region/model 或可选平台功能不因本插件已交付而获得兼容声明。

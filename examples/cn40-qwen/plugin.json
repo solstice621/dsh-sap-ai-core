@@ -19,7 +19,7 @@
       "authRecovery": true,
       "models": [{
         "id": "qwen-demo",
-        "name": "Qwen via SAP AI Core cn40",
+        "name": "Qwen 3.6 Plus via SAP AI Core cn40",
         "upstreamModel": "qwen3.6-plus",
         "deployment": { "id": "REPLACE_WITH_RUNNING_DEPLOYMENT" },
         "mode": "streaming",

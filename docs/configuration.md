@@ -14,7 +14,7 @@ dsh plugin --profile desktop add /absolute/path/dsh-sap-ai-core-0.1.0-rc.1.tgz
 
 其他 CLI profile 使用其实际名称。bundle 自动注册 sap-ai-core 条目，初始 instances/providers 为空，不发网络请求。已有 DSH profile 必须提供 llm 和 credentials 服务。将 [cn40 patch](../examples/cn40-qwen/cordis.patch.yml) 的配置更新合并到 profile 的 cordis.patch.yml，填入已知的 OAuth host 与既有 Deployment ID。不要再次 insert 同一个插件。示例 provider 为 sap-ai-core-demo，逻辑模型为 qwen-demo。它们会进入 DSH provider/model 列表及 configurable-provider directory；界面只使用凭证引用，OAuth client secret 流程在 Node 进程运行。
 
-独立命令行诊断无需 kagent。在同一个安装目录中运行：
+独立命令行诊断无需 kagent。在提供下述 DSH peers 的普通 npm 宿主目录中运行：
 
 ~~~sh
 ./node_modules/.bin/dsh-sap-ai-core-diagnose \
@@ -22,7 +22,7 @@ dsh plugin --profile desktop add /absolute/path/dsh-sap-ai-core-0.1.0-rc.1.tgz
   --provider sap-ai-core-demo --model qwen-demo --level config
 ~~~
 
-完整 DSH profile 已提供所需服务。若只在普通 npm 目录使用独立诊断 CLI，另行安装 @deepseek-ai/dsh-credentials-local@0.2.1-rc.5 和 @deepseek-ai/dsh-launch-environment@0.2.1-rc.5 这两个可选 peers；它们负责本地凭证和诊断环境，不被复制到插件。工具诊断额外需要这些精确版本的公开 DSH 包：
+完整 DSH profile 已提供所需服务；桌面应用可由自身加载器提供 peers，直接用普通 node 执行 desktop 插件目录里的 CLI 不等于在桌面宿主运行。若在普通 npm 目录使用独立诊断 CLI，需正常安装 package.json 中的必需 peers，并另行安装 @deepseek-ai/dsh-credentials-local@0.2.1-rc.5 和 @deepseek-ai/dsh-launch-environment@0.2.1-rc.5 两个可选 peers；它们负责本地凭证和诊断环境，不被复制到插件。工具诊断额外需要这些精确版本的公开 DSH 包：
 
 ~~~sh
 npm install @deepseek-ai/dsh-agent@0.2.1-rc.5 \
@@ -32,6 +32,25 @@ npm install @deepseek-ai/dsh-agent@0.2.1-rc.5 \
   @deepseek-ai/dsh-tools@0.2.1-rc.5 \
   @deepseek-ai/dsh-system-prompt@0.2.1-rc.5
 ~~~
+
+## 模型目录与可调用模型
+
+SAP AI Core 提供的模型取决于 region、实例及授权。插件没有把 Qwen 写死为唯一模型：每个 provider 的 models 数组可以登记多个逻辑模型，每项分别配置 upstreamModel 和 deployment。DSH 选择器展示这些已配置项；打开选择器不会自动查询云目录或创建部署。
+
+2026-10-31 对当前 cn40 实例执行只读查询：GET /v2/lm/scenarios/foundation-models/models 返回下列六个目录项；对 default 资源组的完整 Deployment 列表查询发现一个 RUNNING foundation-models 部署，对应 qwen3.6-plus，另一个 RUNNING 部署属于 orchestration。查询没有发起推理。
+
+| 目录模型 | 当前 Chat Completions 接入状态 |
+| --- | --- |
+| qwen3.6-plus | 已有对应部署，已在 DSH 配置并完成短验收 |
+| qwen3.6-flash | 目录可见；该资源组未发现对应 foundation-models 部署 |
+| qwen3.7-plus | 目录可见；该资源组未发现对应 foundation-models 部署 |
+| qwen3.7-max | 目录可见；该资源组未发现对应 foundation-models 部署 |
+| qwen3.8-max | 目录可见；该资源组未发现对应 foundation-models 部署 |
+| text-embedding-v4 | Embeddings 模型，不属于本插件首版的聊天接口 |
+
+模型目录存在某项，不代表能把它的名字发送到 Qwen 3.6 Plus 的部署来切换模型。接入其他聊天模型时，先由部署者提供匹配的既有部署，再在 models 添加独立 ID、upstreamModel、deployment 和该路由的能力证据。也可用下文的唯一发现 selector 解析该模型已有部署；这不会自动枚举或注册模型。不能复制 qwen3.6-plus 的 verified 能力声明作为其他模型的实测结果。
+
+Orchestration 可以提供另一种模型访问方式，但请求/响应协议不同，当前插件不把它伪装成 foundation-models 的 Chat Completions 路由。其他地区可能有不同目录，本次 cn40 查询不代表 SAP AI Core 的全球模型清单。DSH 的品牌介绍也不作为能力证据；当前插件向 DSH 声明的输入模态只有 text。
 
 ## 三层映射
 
@@ -94,6 +113,6 @@ maxOutputTokens 是本配置允许的单次请求上限，defaultMaxTokens 是�
 
 proxyMode=environment 显式使用 undici 的 HTTP_PROXY、HTTPS_PROXY、NO_PROXY；小写变量优先。proxyMode=direct 不使用环境代理；proxyMode=url 只使用 proxyUrl，不允许代理 URL 内嵌凭证。每次调用创建请求级 dispatcher，不修改全局 fetch。
 
-cn40 本机实测通过公司代理；只有 proxy.sha.sap.corp:8080 可达时才使用。插件不会更改系统代理、VPN 或 DNS。Kubernetes 使用集群出口配置，不直接照搬本机代理。TLS 始终验证证书；network.caFile 可加载明确的企业 CA 文件，并保留 Node 内置根证书。
+cn40 曾通过公司代理实测；只有 proxy.sha.sap.corp:8080 可达时才使用。2026-10-31 公司代理 DNS 失败后，请求级 direct 的认证和真实流式检查通过，本地 desktop profile 已改用 direct。该配置不自动选择或回退网络路径，其他环境需自行确认可达性。插件不会更改系统代理、VPN 或 DNS。Kubernetes 使用集群出口配置，不直接照搬本机代理。TLS 始终验证证书；network.caFile 可加载明确的企业 CA 文件，并保留 Node 内置根证书。
 
 [Kubernetes 容器片段](../examples/kubernetes/container-fragment.yaml) 引用已有 Secret 和 ConfigMap，不是独立资源。环境 Secret 更新通常需重启 Pod；热轮换应使用 DSH 可更新凭证存储并另行验证。不要将 Secret 烘焙进镜像。示例 liveness 只运行 config 检查，不发 OAuth 或付费请求。本地 kind 的真实 auth/deployment/stream 已在非 root、只读根目录 Pod 通过；生产集群、Secret 轮换和 NetworkPolicy 隔离未验证。
