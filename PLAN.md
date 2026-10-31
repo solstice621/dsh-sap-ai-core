@@ -20,7 +20,9 @@
 
 用户最新要求扩为五档，Max=128,000，其余均匀分配。rc.4 预设现为低/中/高/极高/Max = 25,600/51,200/76,800/102,400/128,000，默认 max，并保留 off。test:pack 同步验证五模型显示的全部选项及默认/显式请求参数；live thinking 入口同步六个选项及 40 次请求上限，但本轮不重新运行付费测试。128,000 沿用 rc.3 的参数接受证据，四个新中间值未分别补做 live 验证。升级保留模型 ID 和凭证引用，旧会话显式 high 改为 76,800，需要最高值时选择 Max；历史会话不批量迁移。
 
-2026-10-31 rc.4 的 npm run typecheck、npm run test:pack 和 git diff --check 通过。打包测试在干净 DSH profile 检查五模型的六个选项、默认 Max 与逐档请求参数，并通过两种协议的 Agent 工具闭环及卸载重装。最终归档 SHA-256 为 289e74642e63d4ff600e8173e60a1b7e62cb62ce7b80488a93e55d8f291939b7，87 个打包文件与工作树一致。验证记录为 .local/rc4-delivery/validation.json。桌面升级待应用正常退出后执行；候选归档已准备，本轮没有新增付费请求。
+2026-10-31 rc.4 的 npm run typecheck、npm run test:pack 和 git diff --check 通过。打包测试在干净 DSH profile 检查五模型的六个选项、默认 Max 与逐档请求参数，并通过两种协议的 Agent 工具闭环及卸载重装。最终归档 SHA-256 为 289e74642e63d4ff600e8173e60a1b7e62cb62ce7b80488a93e55d8f291939b7，87 个打包文件与工作树一致。验证记录为 .local/rc4-delivery/validation.json。用户正常退出 DSH 后，已通过桌面自带 CLI 升级 desktop profile 并重启。安装的 87 个文件与 Release 归档一致，五模型均保存全部六个选项及默认 max；其他 profile 配置和依赖保持一致，重启后再次核对通过。备份与安装记录为 .local/rc4-delivery/install-state.json。本轮没有新增付费请求。
+
+rc.4 源码提交为 [515f40e](https://github.com/solstice621/dsh-sap-ai-core/commit/515f40e18ac05ce0bbe9a3e051ce60537b0c3443)，[对应 CI](https://github.com/solstice621/dsh-sap-ai-core/actions/runs/41180525605) 通过确定性测试、干净打包安装和 dist 一致性；[v0.1.0-rc.4](https://github.com/solstice621/dsh-sap-ai-core/releases/tag/v0.1.0-rc.4) 已发布 tgz、manifest 和 SHA256SUMS，下载包与本地安装归档摘要一致。社区 [PR #10730](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/10730) 已更新到 rc.4，并修正五档加关闭的说明；仅修改本插件条目，格式与目录检查通过。站点构建及社区审核状态以 PR 为准，仓库满一天时间为 2026-11-01 02:43:46（Asia/Shanghai）。
 
 独立桌面交付记录（2026-10-31）：0.1.0-rc.1 已通过桌面版自带 CLI 安装到 desktop profile，并以用户已有 cn40 实例配置 sap-ai-core-cn40 / qwen-cn40。DSH 0.2.1-rc.5 自带 Node 24.21.0 上的 37 项确定性测试通过；实际桌面进程中的一请求验证收到 11 个真实增量，usage=55（23 input + 32 output）。已保留原有插件、配置与凭证，仅新增独立 SAP credential refs；临时验收插件已从 profile 移除。桌面安装归档 SHA-256：8530892283267df37cb620343d59c793b27e08e3c743b6d20530b812aceba6cc。独立发行使用 MIT、GitHub 源码及预编译 tgz，不等待 kagent 的剩余平台项；S5/S6 状态仍按上文保留。
 
