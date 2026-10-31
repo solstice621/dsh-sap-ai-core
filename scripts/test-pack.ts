@@ -46,6 +46,7 @@ try {
     node: process.version, dsh: '0.2.1-rc.5', validatedAt: new Date().toISOString(),
     cleanInstall: true, publishedImportsOnly: true, standaloneProfile: true, optionalAgentToolLoop: true, cliConfigCheck: true,
     bundleComposition: true, emptyConfiguration: true, installScriptsDisabled: true,
+    fiveModelSelection: true, thinkingSelection: true, orchestrationToolLoop: true,
     files: packed.files.map(file => file.path),
   };
   await writeFile(join(artifacts, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n');

@@ -33,7 +33,7 @@ const InstanceSchema = z.object({
     allowInsecureLocalhost: z.boolean().default(false),
 }).strict();
 const SelectorSchema = z.object({
-    scenario: nonempty, model: nonempty, version: nonempty.optional(),
+    scenario: nonempty, model: nonempty.optional(), version: nonempty.optional(),
 }).strict();
 const DeploymentSchema = z.union([
     z.object({ id: z.string().min(1).max(256) }).strict(),
@@ -74,6 +74,7 @@ const CompatibilitySchema = z.object({
 });
 const ModelSchema = z.object({
     id, name: nonempty.optional(), upstreamModel: nonempty, deployment: DeploymentSchema,
+    upstreamModelVersion: nonempty.optional(),
     mode: z.enum(['streaming', 'buffered']).default('streaming'),
     capabilities: CapabilitiesSchema, compatibility: CompatibilitySchema,
     contextWindow: z.number().int().positive().optional(),
@@ -88,7 +89,7 @@ const RetrySchema = z.object({
 }).strict().default({ maxRetries: 3, initialDelayMs: 1000, maxDelayMs: 30_000, jitterRatio: 0.2 });
 const ProviderSchema = z.object({
     instance: id, displayName: nonempty.optional(), resourceGroup: z.string().min(1).max(128).regex(/^[A-Za-z0-9._-]+$/),
-    protocol: z.literal('openai-chat-completions'), apiVersion: nonempty.optional(),
+    protocol: z.enum(['openai-chat-completions', 'sap-orchestration-v2']), apiVersion: nonempty.optional(),
     inferencePath: nonempty.default('/v2/inference/deployments/{deploymentId}'),
     headers: z.record(z.string(), z.string()).default({}),
     models: z.array(ModelSchema).min(1), retryPolicy: RetrySchema,
@@ -163,8 +164,10 @@ export function snapshotOf(input, generation = 1) {
         if (!Object.hasOwn(config.instances, provider.instance))
             invalid('provider refers to an unknown instance');
         const path = provider.inferencePath;
-        if (!path.startsWith('/') || path.startsWith('//') || /[?#\\\s]/.test(path) || path.includes('/chat/completions') || path.split('/').some(p => p === '.' || p === '..') || path.split('{deploymentId}').length !== 2 || /[{}]/.test(path.replace('{deploymentId}', '')))
+        if (!path.startsWith('/') || path.startsWith('//') || /[?#\\\s]/.test(path) || path.includes('/chat/completions') || path.includes('/v2/completion') || path.split('/').some(p => p === '.' || p === '..') || path.split('{deploymentId}').length !== 2 || /[{}]/.test(path.replace('{deploymentId}', '')))
             invalid('invalid deployment path template');
+        if (provider.protocol === 'sap-orchestration-v2' && provider.apiVersion !== undefined)
+            invalid('Orchestration v2 uses its versioned path, not apiVersion');
         const headers = new Set();
         for (const [key, value] of Object.entries(provider.headers)) {
             const lower = key.toLowerCase();
@@ -179,10 +182,19 @@ export function snapshotOf(input, generation = 1) {
             if (models.has(model.id))
                 invalid('duplicate logical model ID');
             models.add(model.id);
+            if (provider.protocol !== 'sap-orchestration-v2' && model.upstreamModelVersion !== undefined)
+                invalid('upstreamModelVersion is only supported by Orchestration v2');
             if ('id' in model.deployment && (/^[.]{1,2}$/.test(model.deployment.id) || /[\u0000-\u001f\u007f]/.test(model.deployment.id)))
                 invalid('invalid Deployment ID');
-            if ('selector' in model.deployment && model.deployment.selector.model !== model.upstreamModel)
-                invalid('selector model must equal upstreamModel');
+            if ('selector' in model.deployment) {
+                const selector = model.deployment.selector;
+                if (provider.protocol === 'sap-orchestration-v2') {
+                    if (selector.scenario !== 'orchestration' || selector.model !== undefined || selector.version !== undefined)
+                        invalid('Orchestration discovery selects a shared orchestration deployment, without a model selector');
+                }
+                else if (selector.model !== model.upstreamModel)
+                    invalid('selector model must equal upstreamModel');
+            }
             if (model.mode === 'streaming' && !model.capabilities.streaming)
                 invalid('streaming mode requires an explicit capability declaration');
             if (model.capabilities.parallelToolCalls && !model.capabilities.tools)

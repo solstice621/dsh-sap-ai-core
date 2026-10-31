@@ -7,6 +7,7 @@ import { SapAiCoreError, checkAbort, safeError } from '../diagnostics/errors.js'
 import type { HttpReply } from '../transport/http.js';
 import { mapUsage } from './usage.js';
 import { replayState } from './replay.js';
+import { responseProjection } from './orchestration.js';
 
 type TextState = { kind: 'text' | 'reasoning'; index: number; parts: string[] };
 type ToolState = { kind: 'tool-call'; index: number; id?: string; name: string; parts: string[]; pending: string[] };
@@ -164,6 +165,7 @@ export async function* streamReply(reply: HttpReply, route: ModelRoute): AsyncGe
   if (!/^text[/]event-stream(?:;|$)/i.test(response.headers.get('content-type') ?? '')) protocol('expected text/event-stream; buffered JSON is not streaming');
   if (!response.body) protocol('missing SSE body');
   const translator = new ChatStreamTranslator(route);
+  const project = responseProjection(route);
   const pending: EventSourceMessage[] = [];
   let pendingBytes = 0;
   const parser = createParser({
@@ -196,7 +198,8 @@ export async function* streamReply(reply: HttpReply, route: ModelRoute): AsyncGe
         }
         let data: unknown;
         try { data = JSON.parse(event.data); } catch { return protocol('invalid JSON in SSE event'); }
-        for (const chunk of translator.accept(data)) { checkAbort(scope.signal, 'stream'); yield chunk; }
+        const projected = project(data);
+        if (projected !== undefined) for (const chunk of translator.accept(projected)) { checkAbort(scope.signal, 'stream'); yield chunk; }
       }
     }
   } catch (error) {
@@ -214,7 +217,7 @@ export async function* streamReply(reply: HttpReply, route: ModelRoute): AsyncGe
 
 /** One full response in explicit buffered mode; never counted as real streaming. */
 export function bufferedReply(raw: unknown, route: ModelRoute): StreamChunk[] {
-  const data = object(raw);
+  const data = object(responseProjection(route)(raw));
   if (data.error !== undefined) throw new SapAiCoreError('PROVIDER_ERROR', 'inference', 'upstream in-band error');
   if (!Array.isArray(data.choices) || data.choices.length !== 1) protocol('invalid buffered choices');
   const choice = object(data.choices[0]);

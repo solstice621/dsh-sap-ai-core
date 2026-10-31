@@ -6,7 +6,8 @@ import { SapAiCoreError } from '../diagnostics/errors.js';
 function identity(route: ModelRoute): string {
   return createHash('sha256').update(JSON.stringify([
     route.instanceId, route.instance.apiBaseUrl, route.providerId, route.provider.resourceGroup,
-    route.provider.apiVersion, route.model.id, route.model.upstreamModel, route.model.deployment, route.model.compatibility,
+    route.provider.protocol, route.provider.inferencePath, route.provider.apiVersion,
+    route.model.id, route.model.upstreamModel, route.model.upstreamModelVersion, route.model.deployment, route.model.compatibility,
   ])).digest('hex');
 }
 

@@ -72,7 +72,7 @@ export declare const Config: s<Schemastery.ObjectS<NoInfer<{
         instance?: string | null | undefined;
         displayName?: string | null | undefined;
         resourceGroup?: string | null | undefined;
-        protocol?: "openai-chat-completions" | null | undefined;
+        protocol?: "openai-chat-completions" | "sap-orchestration-v2" | null | undefined;
         apiVersion?: string | null | undefined;
         inferencePath?: string | null | undefined;
         headers?: import("@deepseek-ai/cosmokit").Dict<string, string> | null | undefined;
@@ -80,6 +80,7 @@ export declare const Config: s<Schemastery.ObjectS<NoInfer<{
             id?: string | null | undefined;
             name?: string | null | undefined;
             upstreamModel?: string | null | undefined;
+            upstreamModelVersion?: string | null | undefined;
             deployment?: ({
                 id?: string | null | undefined;
             } & import("@deepseek-ai/cosmokit").Dict) | ({
@@ -134,7 +135,7 @@ export declare const Config: s<Schemastery.ObjectS<NoInfer<{
         instance: s<string, string, "defined">;
         displayName: s<string, string, "plain">;
         resourceGroup: s<string, string, "defined">;
-        protocol: s<"openai-chat-completions", "openai-chat-completions", "defined">;
+        protocol: s<"openai-chat-completions" | "sap-orchestration-v2", "openai-chat-completions" | "sap-orchestration-v2", "defined">;
         apiVersion: s<string, string, "plain">;
         inferencePath: s<string, string, "plain">;
         headers: s<import("@deepseek-ai/cosmokit").Dict<string, string>, import("@deepseek-ai/cosmokit").Dict<string, string>, "plain">;
@@ -142,6 +143,7 @@ export declare const Config: s<Schemastery.ObjectS<NoInfer<{
             id?: string | null | undefined;
             name?: string | null | undefined;
             upstreamModel?: string | null | undefined;
+            upstreamModelVersion?: string | null | undefined;
             deployment?: ({
                 id?: string | null | undefined;
             } & import("@deepseek-ai/cosmokit").Dict) | ({
@@ -188,6 +190,7 @@ export declare const Config: s<Schemastery.ObjectS<NoInfer<{
             id: s<string, string, "defined">;
             name: s<string, string, "plain">;
             upstreamModel: s<string, string, "defined">;
+            upstreamModelVersion: s<string, string, "plain">;
             deployment: s<({
                 id?: string | null | undefined;
             } & import("@deepseek-ai/cosmokit").Dict) | ({
@@ -204,11 +207,11 @@ export declare const Config: s<Schemastery.ObjectS<NoInfer<{
             }>> | Schemastery.ObjectT<NoInfer<{
                 selector: s<Schemastery.ObjectS<NoInfer<{
                     scenario: s<string, string, "defined">;
-                    model: s<string, string, "defined">;
+                    model: s<string, string, "plain">;
                     version: s<string, string, "plain">;
                 }>>, Schemastery.ObjectT<NoInfer<{
                     scenario: s<string, string, "defined">;
-                    model: s<string, string, "defined">;
+                    model: s<string, string, "plain">;
                     version: s<string, string, "plain">;
                 }>>, "defined">;
                 cacheTtlMs: s<number, number, "plain">;
@@ -368,7 +371,7 @@ export declare const Config: s<Schemastery.ObjectS<NoInfer<{
         instance?: string | null | undefined;
         displayName?: string | null | undefined;
         resourceGroup?: string | null | undefined;
-        protocol?: "openai-chat-completions" | null | undefined;
+        protocol?: "openai-chat-completions" | "sap-orchestration-v2" | null | undefined;
         apiVersion?: string | null | undefined;
         inferencePath?: string | null | undefined;
         headers?: import("@deepseek-ai/cosmokit").Dict<string, string> | null | undefined;
@@ -376,6 +379,7 @@ export declare const Config: s<Schemastery.ObjectS<NoInfer<{
             id?: string | null | undefined;
             name?: string | null | undefined;
             upstreamModel?: string | null | undefined;
+            upstreamModelVersion?: string | null | undefined;
             deployment?: ({
                 id?: string | null | undefined;
             } & import("@deepseek-ai/cosmokit").Dict) | ({
@@ -430,7 +434,7 @@ export declare const Config: s<Schemastery.ObjectS<NoInfer<{
         instance: s<string, string, "defined">;
         displayName: s<string, string, "plain">;
         resourceGroup: s<string, string, "defined">;
-        protocol: s<"openai-chat-completions", "openai-chat-completions", "defined">;
+        protocol: s<"openai-chat-completions" | "sap-orchestration-v2", "openai-chat-completions" | "sap-orchestration-v2", "defined">;
         apiVersion: s<string, string, "plain">;
         inferencePath: s<string, string, "plain">;
         headers: s<import("@deepseek-ai/cosmokit").Dict<string, string>, import("@deepseek-ai/cosmokit").Dict<string, string>, "plain">;
@@ -438,6 +442,7 @@ export declare const Config: s<Schemastery.ObjectS<NoInfer<{
             id?: string | null | undefined;
             name?: string | null | undefined;
             upstreamModel?: string | null | undefined;
+            upstreamModelVersion?: string | null | undefined;
             deployment?: ({
                 id?: string | null | undefined;
             } & import("@deepseek-ai/cosmokit").Dict) | ({
@@ -484,6 +489,7 @@ export declare const Config: s<Schemastery.ObjectS<NoInfer<{
             id: s<string, string, "defined">;
             name: s<string, string, "plain">;
             upstreamModel: s<string, string, "defined">;
+            upstreamModelVersion: s<string, string, "plain">;
             deployment: s<({
                 id?: string | null | undefined;
             } & import("@deepseek-ai/cosmokit").Dict) | ({
@@ -500,11 +506,11 @@ export declare const Config: s<Schemastery.ObjectS<NoInfer<{
             }>> | Schemastery.ObjectT<NoInfer<{
                 selector: s<Schemastery.ObjectS<NoInfer<{
                     scenario: s<string, string, "defined">;
-                    model: s<string, string, "defined">;
+                    model: s<string, string, "plain">;
                     version: s<string, string, "plain">;
                 }>>, Schemastery.ObjectT<NoInfer<{
                     scenario: s<string, string, "defined">;
-                    model: s<string, string, "defined">;
+                    model: s<string, string, "plain">;
                     version: s<string, string, "plain">;
                 }>>, "defined">;
                 cacheTtlMs: s<number, number, "plain">;

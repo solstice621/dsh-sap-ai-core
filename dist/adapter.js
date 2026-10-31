@@ -11,6 +11,7 @@ import { SapAiCoreError, aborted, checkAbort, safeError } from './diagnostics/er
 import { buildRequest } from './protocol/request.js';
 import { modelInfo } from './protocol/capabilities.js';
 import { bufferedReply, streamReply } from './protocol/stream.js';
+import { encodeRequest } from './protocol/orchestration.js';
 export class SapAiCoreAdapter extends LlmAdapter {
     options;
     credentials;
@@ -137,7 +138,7 @@ export class SapAiCoreAdapter extends LlmAdapter {
             const deployment = await this.deployments.resolve(route, lease, client, scope.signal);
             diagnostic.deployment = createHash('sha256').update(deployment.id).digest('hex').slice(0, 12);
             checkAbort(scope.signal);
-            reply = await client.request(deployment.url, { phase: 'inference', method: 'POST', headers: providerHeaders(route, lease.value, requestId, body.stream), body: JSON.stringify(body), signal: scope.signal, requestId });
+            reply = await client.request(deployment.url, { phase: 'inference', method: 'POST', headers: providerHeaders(route, lease.value, requestId, body.stream), body: JSON.stringify(encodeRequest(body, route)), signal: scope.signal, requestId });
             diagnostic.upstreamRequestId = reply.facts.upstreamRequestId;
             const chunks = body.stream ? streamReply(reply, route) : bufferedReply(await readJson(reply, 'inference'), route);
             for await (const chunk of chunks) {

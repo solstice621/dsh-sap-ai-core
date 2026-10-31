@@ -3,6 +3,7 @@ import { createParser } from 'eventsource-parser';
 import { SapAiCoreError, checkAbort, safeError } from '../diagnostics/errors.js';
 import { mapUsage } from './usage.js';
 import { replayState } from './replay.js';
+import { responseProjection } from './orchestration.js';
 function protocol(reason) { throw new SapAiCoreError('PROTOCOL', 'stream', reason); }
 function object(value) {
     if (!value || typeof value !== 'object' || Array.isArray(value))
@@ -216,6 +217,7 @@ export async function* streamReply(reply, route) {
     if (!response.body)
         protocol('missing SSE body');
     const translator = new ChatStreamTranslator(route);
+    const project = responseProjection(route);
     const pending = [];
     let pendingBytes = 0;
     const parser = createParser({
@@ -268,10 +270,12 @@ export async function* streamReply(reply, route) {
                 catch {
                     return protocol('invalid JSON in SSE event');
                 }
-                for (const chunk of translator.accept(data)) {
-                    checkAbort(scope.signal, 'stream');
-                    yield chunk;
-                }
+                const projected = project(data);
+                if (projected !== undefined)
+                    for (const chunk of translator.accept(projected)) {
+                        checkAbort(scope.signal, 'stream');
+                        yield chunk;
+                    }
             }
         }
     }
@@ -292,7 +296,7 @@ export async function* streamReply(reply, route) {
 }
 /** One full response in explicit buffered mode; never counted as real streaming. */
 export function bufferedReply(raw, route) {
-    const data = object(raw);
+    const data = object(responseProjection(route)(raw));
     if (data.error !== undefined)
         throw new SapAiCoreError('PROVIDER_ERROR', 'inference', 'upstream in-band error');
     if (!Array.isArray(data.choices) || data.choices.length !== 1)

@@ -85,4 +85,4 @@ dsh plugin --profile desktop remove dsh-sap-ai-core
 
 历史会话继续引用原 provider/model ID；重装时保留这些 ID。确需重命名时，为原 ID 保留兼容配置，或在新会话中选择新 ID；不要批量修改历史 JSONL。凭证引用可以保留供重装使用；彻底撤回时，通过 DSH 凭证服务单独删除本插件持有且不再被其他配置引用的项。
 
-当前独立发行是 0.1.0-rc.1 预发布候选；其已发布 tag、归档及校验值不随后续文档更新而覆盖。S5 自然到期长测在认证网络失败后已退出，直连短测成功但不替代自然到期验证。S6 为独立打包与交付；kagent 父 Agent 的审批、页面恢复和平台生命周期属于可选集成，不作为本插件完成条件。社区投稿尚待审核，完整状态以 progress.md 和 acceptance.md 为准。
+0.1.0-rc.2 增加五模型共用认证和 Orchestration v2。升级只替换 SAP 配置，保留原 provider/model ID 和凭证引用；本地 qwen-cn40 继续代表 Qwen 3.6 Plus。回滚到 rc.1 时同时恢复其 Chat Completions 配置，因为 rc.1 不认识新协议。已发布 tag、归档和校验值保持不变。S5 自然到期长测在认证网络失败后已退出，短测不替代自然到期验证。社区投稿尚待审核，完整状态以 progress.md 和 acceptance.md 为准。

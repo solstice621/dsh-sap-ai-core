@@ -1,0 +1,352 @@
+{
+  "instances": {
+    "company-cn40": {
+      "apiBaseUrl": "https://api.ai.prod-cn40.cn-shanghai.ali.ml.sapcloud.cn",
+      "tokenUrl": "https://REPLACE_WITH_AUTH_HOST/oauth/token",
+      "credentials": {
+        "clientIdRef": "SAP_AICORE_CLIENT_ID",
+        "clientSecretRef": "SAP_AICORE_CLIENT_SECRET"
+      },
+      "oauth": {
+        "clientAuthMethod": "body"
+      },
+      "network": {
+        "proxyMode": "environment",
+        "requestTimeoutMs": 600000,
+        "streamIdleTimeoutMs": 30000
+      }
+    }
+  },
+  "providers": {
+    "sap-ai-core-demo": {
+      "instance": "company-cn40",
+      "displayName": "SAP AI Core cn40",
+      "resourceGroup": "default",
+      "protocol": "sap-orchestration-v2",
+      "retryPolicy": {
+        "maxRetries": 3,
+        "initialDelayMs": 1000,
+        "maxDelayMs": 30000,
+        "jitterRatio": 0.2
+      },
+      "authRecovery": true,
+      "models": [
+        {
+          "id": "qwen3.6-plus",
+          "name": "Qwen 3.6 Plus",
+          "upstreamModel": "qwen3.6-plus",
+          "deployment": {
+            "selector": {
+              "scenario": "orchestration"
+            }
+          },
+          "mode": "streaming",
+          "capabilities": {
+            "streaming": true,
+            "tools": true,
+            "parallelToolCalls": false,
+            "evidence": {
+              "status": "verified",
+              "reference": "docs/compatibility.md: cn40 Orchestration v2 five-model acceptance, 2026-10-31; revalidate a replacement route"
+            },
+            "reasoningContent": true
+          },
+          "compatibility": {
+            "systemRole": "system",
+            "developerRole": "system",
+            "maxTokensField": "max_tokens",
+            "includeUsage": true,
+            "parameters": {
+              "enable_thinking": false
+            },
+            "reasoningEfforts": {
+              "off": {
+                "name": "关闭思考",
+                "parameters": {
+                  "enable_thinking": false
+                }
+              },
+              "low": {
+                "name": "低",
+                "parameters": {
+                  "enable_thinking": true,
+                  "thinking_budget": 1024
+                }
+              },
+              "medium": {
+                "name": "中",
+                "parameters": {
+                  "enable_thinking": true,
+                  "thinking_budget": 4096
+                }
+              },
+              "high": {
+                "name": "高",
+                "parameters": {
+                  "enable_thinking": true,
+                  "thinking_budget": 16384
+                }
+              }
+            },
+            "defaultReasoningEffort": "off"
+          },
+          "maxOutputTokens": 4096,
+          "defaultMaxTokens": 4096,
+          "upstreamModelVersion": "latest"
+        },
+        {
+          "id": "qwen3.6-flash",
+          "name": "Qwen 3.6 Flash",
+          "upstreamModel": "qwen3.6-flash",
+          "deployment": {
+            "selector": {
+              "scenario": "orchestration"
+            }
+          },
+          "mode": "streaming",
+          "capabilities": {
+            "streaming": true,
+            "tools": true,
+            "parallelToolCalls": false,
+            "evidence": {
+              "status": "verified",
+              "reference": "docs/compatibility.md: cn40 Orchestration v2 five-model acceptance, 2026-10-31; revalidate a replacement route"
+            },
+            "reasoningContent": true
+          },
+          "compatibility": {
+            "systemRole": "system",
+            "developerRole": "system",
+            "maxTokensField": "max_tokens",
+            "includeUsage": true,
+            "parameters": {
+              "enable_thinking": false
+            },
+            "reasoningEfforts": {
+              "off": {
+                "name": "关闭思考",
+                "parameters": {
+                  "enable_thinking": false
+                }
+              },
+              "low": {
+                "name": "低",
+                "parameters": {
+                  "enable_thinking": true,
+                  "thinking_budget": 1024
+                }
+              },
+              "medium": {
+                "name": "中",
+                "parameters": {
+                  "enable_thinking": true,
+                  "thinking_budget": 4096
+                }
+              },
+              "high": {
+                "name": "高",
+                "parameters": {
+                  "enable_thinking": true,
+                  "thinking_budget": 16384
+                }
+              }
+            },
+            "defaultReasoningEffort": "off"
+          },
+          "maxOutputTokens": 4096,
+          "defaultMaxTokens": 4096,
+          "upstreamModelVersion": "latest"
+        },
+        {
+          "id": "qwen3.7-plus",
+          "name": "Qwen 3.7 Plus",
+          "upstreamModel": "qwen3.7-plus",
+          "deployment": {
+            "selector": {
+              "scenario": "orchestration"
+            }
+          },
+          "mode": "streaming",
+          "capabilities": {
+            "streaming": true,
+            "tools": true,
+            "parallelToolCalls": false,
+            "evidence": {
+              "status": "verified",
+              "reference": "docs/compatibility.md: cn40 Orchestration v2 five-model acceptance, 2026-10-31; revalidate a replacement route"
+            },
+            "reasoningContent": true
+          },
+          "compatibility": {
+            "systemRole": "system",
+            "developerRole": "system",
+            "maxTokensField": "max_tokens",
+            "includeUsage": true,
+            "parameters": {
+              "enable_thinking": false
+            },
+            "reasoningEfforts": {
+              "off": {
+                "name": "关闭思考",
+                "parameters": {
+                  "enable_thinking": false
+                }
+              },
+              "low": {
+                "name": "低",
+                "parameters": {
+                  "enable_thinking": true,
+                  "thinking_budget": 1024
+                }
+              },
+              "medium": {
+                "name": "中",
+                "parameters": {
+                  "enable_thinking": true,
+                  "thinking_budget": 4096
+                }
+              },
+              "high": {
+                "name": "高",
+                "parameters": {
+                  "enable_thinking": true,
+                  "thinking_budget": 16384
+                }
+              }
+            },
+            "defaultReasoningEffort": "off"
+          },
+          "maxOutputTokens": 4096,
+          "defaultMaxTokens": 4096,
+          "upstreamModelVersion": "latest"
+        },
+        {
+          "id": "qwen3.7-max",
+          "name": "Qwen 3.7 Max",
+          "upstreamModel": "qwen3.7-max",
+          "deployment": {
+            "selector": {
+              "scenario": "orchestration"
+            }
+          },
+          "mode": "streaming",
+          "capabilities": {
+            "streaming": true,
+            "tools": true,
+            "parallelToolCalls": false,
+            "evidence": {
+              "status": "verified",
+              "reference": "docs/compatibility.md: cn40 Orchestration v2 five-model acceptance, 2026-10-31; revalidate a replacement route"
+            },
+            "reasoningContent": true
+          },
+          "compatibility": {
+            "systemRole": "system",
+            "developerRole": "system",
+            "maxTokensField": "max_tokens",
+            "includeUsage": true,
+            "parameters": {
+              "enable_thinking": false
+            },
+            "reasoningEfforts": {
+              "off": {
+                "name": "关闭思考",
+                "parameters": {
+                  "enable_thinking": false
+                }
+              },
+              "low": {
+                "name": "低",
+                "parameters": {
+                  "enable_thinking": true,
+                  "thinking_budget": 1024
+                }
+              },
+              "medium": {
+                "name": "中",
+                "parameters": {
+                  "enable_thinking": true,
+                  "thinking_budget": 4096
+                }
+              },
+              "high": {
+                "name": "高",
+                "parameters": {
+                  "enable_thinking": true,
+                  "thinking_budget": 16384
+                }
+              }
+            },
+            "defaultReasoningEffort": "off"
+          },
+          "maxOutputTokens": 4096,
+          "defaultMaxTokens": 4096,
+          "upstreamModelVersion": "latest"
+        },
+        {
+          "id": "qwen3.8-max",
+          "name": "Qwen 3.8 Max",
+          "upstreamModel": "qwen3.8-max",
+          "deployment": {
+            "selector": {
+              "scenario": "orchestration"
+            }
+          },
+          "mode": "streaming",
+          "capabilities": {
+            "streaming": true,
+            "tools": true,
+            "parallelToolCalls": false,
+            "evidence": {
+              "status": "verified",
+              "reference": "docs/compatibility.md: cn40 Orchestration v2 five-model acceptance, 2026-10-31; revalidate a replacement route"
+            },
+            "reasoningContent": true
+          },
+          "compatibility": {
+            "systemRole": "system",
+            "developerRole": "system",
+            "maxTokensField": "max_tokens",
+            "includeUsage": true,
+            "parameters": {
+              "enable_thinking": false
+            },
+            "reasoningEfforts": {
+              "off": {
+                "name": "关闭思考",
+                "parameters": {
+                  "enable_thinking": false
+                }
+              },
+              "low": {
+                "name": "低",
+                "parameters": {
+                  "enable_thinking": true,
+                  "thinking_budget": 1024
+                }
+              },
+              "medium": {
+                "name": "中",
+                "parameters": {
+                  "enable_thinking": true,
+                  "thinking_budget": 4096
+                }
+              },
+              "high": {
+                "name": "高",
+                "parameters": {
+                  "enable_thinking": true,
+                  "thinking_budget": 16384
+                }
+              }
+            },
+            "defaultReasoningEffort": "off"
+          },
+          "maxOutputTokens": 4096,
+          "defaultMaxTokens": 4096,
+          "upstreamModelVersion": "latest"
+        }
+      ]
+    }
+  }
+}

@@ -59,9 +59,11 @@ export class DeploymentResolver {
                 seen.add(item.id);
                 if (item.status !== 'RUNNING' || item.scenarioId !== deployment.selector.scenario)
                     continue;
-                const model = deploymentModel(item);
-                if (model.name !== deployment.selector.model || (deployment.selector.version !== undefined && model.version !== deployment.selector.version))
-                    continue;
+                if (route.provider.protocol !== 'sap-orchestration-v2') {
+                    const model = deploymentModel(item);
+                    if (model.name !== deployment.selector.model || (deployment.selector.version !== undefined && model.version !== deployment.selector.version))
+                        continue;
+                }
                 candidates.set(item.id, item);
             }
             skip += data.resources.length;
@@ -98,6 +100,8 @@ export class DeploymentResolver {
         const deployment = record(await readJson(reply, 'deployment'));
         if (deployment.id !== route.model.deployment.id || deployment.status !== 'RUNNING')
             throw new SapAiCoreError('DEPLOYMENT_NOT_READY', 'deployment', 'explicit deployment is not RUNNING');
+        if (route.provider.protocol === 'sap-orchestration-v2' && deployment.scenarioId !== 'orchestration')
+            throw new SapAiCoreError('ROUTING', 'deployment', 'explicit deployment is not an orchestration deployment');
     }
 }
 //# sourceMappingURL=deployments.js.map

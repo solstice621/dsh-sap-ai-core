@@ -1,7 +1,7 @@
 {
   "name": "dsh-sap-ai-core",
-  "version": "0.1.0-rc.1",
-  "description": "Independent SAP AI Core Chat Completions provider for DeepSeek Harness",
+  "version": "0.1.0-rc.2",
+  "description": "SAP AI Core multi-model provider for DeepSeek Harness with shared OAuth authentication",
   "license": "MIT",
   "author": "solstice621",
   "repository": {
@@ -12,7 +12,13 @@
   "bugs": {
     "url": "https://github.com/solstice621/dsh-sap-ai-core/issues"
   },
-  "keywords": ["dsh-plugin", "deepseek-harness", "sap-ai-core", "llm", "qwen"],
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "sap-ai-core",
+    "llm",
+    "qwen"
+  ],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -59,7 +65,9 @@
     "test:unit": "node --import tsx --test tests/unit/*.test.ts",
     "test:contract": "node --import tsx --test tests/contract/*.test.ts",
     "test:integration": "node --import tsx --test tests/integration/*.test.ts",
-    "test:pack": "node --import tsx scripts/test-pack.ts"
+    "test:pack": "node --import tsx scripts/test-pack.ts",
+    "test:live:orchestration": "node --import tsx tests/live/orchestration.ts",
+    "test:live:thinking": "node --import tsx tests/live/thinking.ts"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "4.0.5",

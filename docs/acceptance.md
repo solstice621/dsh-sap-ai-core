@@ -29,6 +29,24 @@
 
 所有测试使用合成凭证与本地 mock；生产源码没有测试注入的 URL 或凭证。最终运行数量与 packed-package 结果同步记录于 progress.md 和 artifacts/manifest.json。
 
+rc.2 的 tests/contract/orchestration.test.ts 追加六项契约：共用认证和部署的五模型隔离、literal 消息与工具回传、final_result 去包装及错误、唯一 Orchestration discovery、取消释放、思考数组与选项/usage 转换。打包验证也覆盖五个模型、思考选项和两种协议的 DSH 工具闭环。
+
+## rc.2 五模型真实验收
+
+2026-10-31 13:34（Asia/Shanghai）通过以下预算测试，使用已有共享 Orchestration 部署，没有创建云端资源：
+
+~~~sh
+SAP_AICORE_LIVE=1 npm run test:live:orchestration -- \
+  --config .local/cn40-five-models.json --provider sap-ai-core-cn40 \
+  --service-key /absolute/path/service-key.json --instance cn40
+~~~
+
+Qwen 3.6 Plus、3.6 Flash、3.7 Plus、3.7 Max、3.8 Max 均通过真实 SSE 和 DSH 工具闭环。工具返回运行时随机校验码，随后模型回答必须包含该值。Plus → Flash 的中文上下文续接及 Flash 取消后恢复通过；五路并发只获取一次 Token。预算 24，实际 19 请求；18 成功、1 主动取消，已知 usage=3847，取消费用未知。能力明细见 [兼容矩阵](compatibility.md)。
+
+最终报告为 .local/cn40-orchestration-live-report.json；源代码/依赖输入摘要为 5e11f8506b6bfc6d158b11d482bc70552544c602029475fe11010da48b79c910。修复前 null content 的失败报告、Flash 跳过算术工具的报告分别保留为 .local/cn40-orchestration-live-before-tool-fix.json 和 .local/cn40-orchestration-arithmetic-report.json；不把失败轮次改记为成功。自然 Token 到期项仍未通过。
+
+14:02–14:03 追加思考选项验收，命令为 test:live:thinking，参数与上文相同。五模型的四个选项及开启思考的工具闭环均有成功证据；主轮 30 次中 29 成功，Flash 高档一次被字符预算保护停止，随后独立补验完成回答。主轮仍记录 failed，补验单列。输入摘要 7c5d555f40cb15da98c67ac85fa50048877bfea540f29517b343f8b282401df6，详见 [思考预算记录](compatibility.md#思考预算与内容)。
+
 ## 真实 cn40 短验收
 
 2026-10-31 00:29 首次通过；去掉未验证的 in-history system 更新元数据后，00:43（Asia/Shanghai）最终回归再次通过：

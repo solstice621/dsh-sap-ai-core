@@ -1,10 +1,38 @@
 # 已验证兼容性
 
-更新：2026-10-31。当前真实验证范围为一个既有 SAP AI Core cn40 foundation-models Deployment，wire model 为 qwen3.6-plus，Resource Group 为 default，api-version 为 2023-12-01-preview。部署标识仅记录 SHA-256 前 12 位：256f16b758ed。
+更新：2026-10-31。真实验证覆盖 cn40 的一个共享 Orchestration 部署和一个 Qwen 3.6 Plus 的 foundation-models 部署，Resource Group 均为 default。下列矩阵分别记录两种协议的能力，不能互相借用未验证项。
 
 这不是对全部 SAP AI Core region、Deployment 或模型的兼容承诺。配置和 mock 验证了参数化及隔离；新真实环境需要补验收。
 
-## 实测能力
+## Orchestration v2 五模型（rc.2）
+
+2026-10-31 13:34（Asia/Shanghai），同一既有部署（摘要 405623ec09b5）通过 /v2/completion 调用下列五个模型，model version=latest、enable_thinking=false。五路同时开始仅获取一次 OAuth Token，四个请求共享等待。
+
+| 模型 | 真实正文增量 | DSH 工具闭环 |
+| --- | --- | --- |
+| Qwen 3.6 Plus | 15 | 通过，一次工具执行和结果回传 |
+| Qwen 3.6 Flash | 18 | 通过，一次工具执行和结果回传 |
+| Qwen 3.7 Plus | 16 | 通过，一次工具执行和结果回传 |
+| Qwen 3.7 Max | 14 | 通过，一次工具执行和结果回传 |
+| Qwen 3.8 Max | 22 | 通过，一次工具执行和结果回传 |
+
+工具返回不出现在 prompt 中的随机校验码，模型再次推理后复述该值，证明使用了实际工具结果。Plus → Flash 的中文两轮上下文续接、Flash 第二个正文增量处取消及随后恢复也通过。整轮 19/24 次请求，18 成功、1 主动取消、无失败 attempt；已返回的权威 usage 合计 3847 tokens（3438 input、409 output），取消请求费用未知。
+
+五模型声明文本、streaming、tools 和下文单独验证的思考内容；同一响应并行工具、大参数、图片、structured output、stop、temperature 及自然到期均未在该协议完成真实验收。原直连模型的 parallelToolCalls 证据不能直接沿用。日常配置的 4096 max_tokens 上限用于答案部分；思考预算另计，不声明模型厂商的最大容量。
+
+最终源代码/依赖输入 SHA-256 为 5e11f8506b6bfc6d158b11d482bc70552544c602029475fe11010da48b79c910，脱敏报告为 .local/cn40-orchestration-live-report.json。修复前工具结果回传因 null content 被 SAP 拒绝；去掉该字段后协议通过。Flash 曾跳过可心算的算术工具，最终使用不可预知的工具结果验收；这不保证模型对任意提示词必定选择工具。
+
+### 思考预算与内容
+
+2026-10-31 14:02–14:03（Asia/Shanghai）新增实测，源代码/依赖输入摘要为 7c5d555f40cb15da98c67ac85fa50048877bfea540f29517b343f8b282401df6。五模型的关闭、低（1024）、中（4096）、高（16384）选项均有成功记录；返回的思考块单独显示，usage 的 reasoningTokens 不重复累计。额外的 64-token 探针中，四个模型实际思考 64 tokens，3.8 Max 提前结束于 54 tokens，验证预算可生效。
+
+主思考测试实际 30/35 请求：29 成功，Flash 高档的一次长思考触及 4096 字符保护后主动停止，缺少最终 usage，整轮如实保留为 failed。14:03 对 Flash 高档单独补验，收到 69 个思考增量并完成答案，reasoningTokens=221、totalTokens=250。不能将高档理解成固定输出长度，也不能用保护退出宣称完整回答成功。
+
+五个模型在 64-token 思考预算下均完成真实 DSH 工具闭环。主轮已知 totalTokens=7024、outputTokens=3196、reasoningTokens=2899；Flash 补验另计 250/227/221。被保护停止的请求费用未知。报告为 .local/cn40-thinking-live-report.json 和 .local/cn40-thinking-qwen3.6-flash-budget-16384.json；原先把总输出上限设得低于思考预算的失败记录保留在 .local/cn40-thinking-conflicting-limits-report.json。
+
+## 原 Chat Completions 路由（rc.1 起）
+
+wire model=qwen3.6-plus，api-version=2023-12-01-preview，部署摘要 256f16b758ed。以下历史实测只对应该路由。
 
 | 能力 | 状态 | 证据或限制 |
 | --- | --- | --- |

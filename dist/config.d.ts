@@ -50,7 +50,10 @@ export declare const ConfigSchema: z.ZodObject<{
         instance: z.ZodString;
         displayName: z.ZodOptional<z.ZodString>;
         resourceGroup: z.ZodString;
-        protocol: z.ZodLiteral<"openai-chat-completions">;
+        protocol: z.ZodEnum<{
+            "openai-chat-completions": "openai-chat-completions";
+            "sap-orchestration-v2": "sap-orchestration-v2";
+        }>;
         apiVersion: z.ZodOptional<z.ZodString>;
         inferencePath: z.ZodDefault<z.ZodString>;
         headers: z.ZodDefault<z.ZodRecord<z.ZodString, z.ZodString>>;
@@ -63,13 +66,14 @@ export declare const ConfigSchema: z.ZodObject<{
             }, z.core.$strict>, z.ZodObject<{
                 selector: z.ZodObject<{
                     scenario: z.ZodString;
-                    model: z.ZodString;
+                    model: z.ZodOptional<z.ZodString>;
                     version: z.ZodOptional<z.ZodString>;
                 }, z.core.$strict>;
                 cacheTtlMs: z.ZodDefault<z.ZodNumber>;
                 maxPages: z.ZodDefault<z.ZodNumber>;
                 pageSize: z.ZodDefault<z.ZodNumber>;
             }, z.core.$strict>]>;
+            upstreamModelVersion: z.ZodOptional<z.ZodString>;
             mode: z.ZodDefault<z.ZodEnum<{
                 streaming: "streaming";
                 buffered: "buffered";

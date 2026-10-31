@@ -13,7 +13,7 @@
 
 - 实现通用 SAP AI Core 模型插件，首版面向经过验证的 OpenAI 兼容 Chat Completions。cn40 Qwen 是首个验证配置，地区、地址、模型和 Deployment 均可配置。
 - 本插件负责凭证、Token、部署路由、模型协议、能力、usage、错误及取消；DSH 负责 Agent 循环和工具执行。
-- 不依赖 kagent，不导入配套插件内部模块，不创建模型 Deployment，不把 foundation-models 路径替换成 Orchestration 接口。
+- 不依赖 kagent，不导入配套插件内部模块，不创建模型 Deployment。用户要求五个 Qwen 模型共用认证并直接选择后，增加显式 sap-orchestration-v2 协议，使用既有 Orchestration Deployment；原 openai-chat-completions 协议保持其路径，不在单次请求中自动换协议或模型。
 - 默认采用独立 LlmAdapter 加经过验证的客户端；S0 按 PLAN 六项条件评估 PiAiAdapter 复用。最终保留一个主传输实现，避免并行维护重复框架。
 - 通过 DSH 公开接口注册 provider、读取凭证和输出 StreamChunk；不修改 SDK 原型或全局 fetch。
 

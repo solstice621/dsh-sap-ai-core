@@ -1,10 +1,16 @@
 # dsh-sap-ai-core 插件实现 PLAN
 
-为 DeepSeek Harness 提供 SAP AI Core 模型接入插件，统一处理企业认证、短期 Token、Resource Group、Deployment 路由和 OpenAI 兼容 Chat Completions。cn40 Qwen 是第一个真实验证配置，地区、模型名称和部署编号都作为配置，而不是插件代码中的常量。
+为 DeepSeek Harness 提供 SAP AI Core 模型接入插件，统一处理企业认证、短期 Token、Resource Group、Deployment 路由、OpenAI 兼容 Chat Completions 和显式 Orchestration v2。cn40 Qwen 是第一个真实验证配置，地区、模型名称和部署编号都作为配置，而不是插件代码中的常量。
 
 日期：2026-10-30；实施更新：2026-10-31。状态：S0–S4 已实现并完成独立验证；S5 短验收通过，S-L07 自然到期长测在刷新认证时发生 TRANSPORT 错误并退出，尚未通过。S6 独立候选版已安装到本地 DSH、推送 GitHub、发布 Release 并投稿社区，社区审核仍在等待。按用户确认的边界，kagent 的父 Agent 审批/拒绝、页面恢复和平台会话生命周期不属于本插件完成条件；S-L09 仅作可选联合记录，不继续扩大平台测试。阶段事实与验证命令见 [docs/progress.md](docs/progress.md)，完整证据矩阵见 [验收记录](docs/acceptance.md)，主传输决策见 [ADR 001](docs/adr-001-transport.md)。下文尚标注“拟定”的内容以实施记录为准。本插件不依赖 kagent，可以独立用于 DSH。
 
 ## 1 目标与支持范围
+
+2026-10-31 新增用户要求：像 opencode auth 一样，共用一次认证并在 DSH 选择 Qwen 3.6 Plus、3.6 Flash、3.7 Plus、3.7 Max、3.8 Max。追加 S7：通过既有的共享 Orchestration 部署接入这五个模型；显式增加 sap-orchestration-v2 协议，复用认证、HTTP/SSE 和 DSH 转换。包中的 cn40 多模型配置提供五个入口；未知模型不会借用这些模型的 verified 能力声明。13:34 已完成五个模型的真实流式和工具闭环、中文上下文跨模型续接、并发认证与取消后恢复，19/24 请求。当前交付版本为 0.1.0-rc.2，打包、本地升级和发行记录见 docs/progress.md；不创建云端部署或扩展平台工作。
+
+用户随后要求思考强度选项：同一 S7 提供关闭/低/中/高，使用经过验证的 enable_thinking 与 thinking_budget 预设，默认关闭；SAP 的思考块单独转换为 DSH reasoning。14:02–14:03 五模型全部选项已有成功证据，思考模式工具闭环均通过；Flash 高档的一次预算保护退出与单独补验如实分开记录。43 项确定性测试通过。
+
+14:12 最终 rc.2 归档已在本地 DSH Desktop 0.2.1-rc.5 / Node 24.21.0 加载；五模型均返回关闭/低/中/高及默认关闭。Flash 低档的一次真实桌面请求收到 56 个 reasoning 增量并完成答案，usage=202（23 input、179 output，其中 173 reasoning，不重复相加）。已核对运行中的协议文件与最终 dist 摘要一致；临时观察插件已移除，DSH 正常重启，日常五模型配置与其他插件保持一致。归档 SHA-256 为 e9c4c6199049afd6b4387c3e0ea8dd55a836a5f853b4fb7de402c8d0a6b9c83f；脱敏证据为 .local/desktop-rc2/thinking-runtime-report.json 和 post-validation-state.json。
 
 独立桌面交付记录（2026-10-31）：0.1.0-rc.1 已通过桌面版自带 CLI 安装到 desktop profile，并以用户已有 cn40 实例配置 sap-ai-core-cn40 / qwen-cn40。DSH 0.2.1-rc.5 自带 Node 24.21.0 上的 37 项确定性测试通过；实际桌面进程中的一请求验证收到 11 个真实增量，usage=55（23 input + 32 output）。已保留原有插件、配置与凭证，仅新增独立 SAP credential refs；临时验收插件已从 profile 移除。桌面安装归档 SHA-256：8530892283267df37cb620343d59c793b27e08e3c743b6d20530b812aceba6cc。独立发行使用 MIT、GitHub 源码及预编译 tgz，不等待 kagent 的剩余平台项；S5/S6 状态仍按上文保留。
 
@@ -13,13 +19,14 @@
 首个完整版本支持：
 
 - SAP AI Core 下经过验证的 OpenAI 兼容 Chat Completions 接口。
+- SAP Orchestration v2 completion，通过共享部署选择经验证的五个 cn40 Qwen 模型。
 - 多个独立 AI Core 实例、Resource Group、provider route 和逻辑模型。
 - 明确的 Deployment ID，以及可选的只读发现与唯一选择。
 - 文本多轮、流式输出、工具调用、工具结果回传和取消。
 - 模型能力声明、模型选择、配置变更和凭证轮换。
 - 本地与 Kubernetes 两种配置方式，诊断输出和打包安装测试。
 
-首版不包含 Orchestration Service、Anthropic 原生协议、Responses API、Embeddings、模型训练或部署创建。它们以后以新的 protocol/route 实现加入，不能因为都属于 SAP AI Core 就宣称已经兼容。
+0.1.0-rc.1 不包含 Orchestration Service；S7 按用户要求增加其 v2 completion 协议。Anthropic 原生协议、Responses API、Embeddings、模型训练或部署创建仍不包含，不能因为都属于 SAP AI Core 就宣称已经兼容。
 
 图片、结构化输出和 reasoning 参数按模型能力逐项启用。未知能力不自动开启；不支持的请求明确返回错误，不静默删掉用户选项。
 
@@ -31,7 +38,7 @@
 | DSH 凭证服务提供按引用读取与安全描述 | 配置保存引用，不能用可读 settings 暴露 client secret |
 | DSH 每次模型 stream 是单次 provider attempt | SDK 内部重试关闭，模型重试由 DSH 失败步骤恢复处理 |
 | DSH 公开导出 `PiAiAdapter` 和异步 `resolveApiKey` 钩子 | 可以评估协议复用，但不能假设已覆盖 SAP 路由、query 和 HTTP 错误要求 |
-| 本机 cn40 样本使用 foundation-models Deployment 和 `/chat/completions` | 不能替换成 orchestration 的 `/v2/completion` |
+| 本机 cn40 具有 foundation-models 与共享 orchestration Deployment | 两种协议显式配置；原 Chat Completions 路径不被隐式替换 |
 | SAP SDK 的公开模型客户端有自己的协议和路由范围 | 使用 SDK 前要验证 cn40 Qwen 路径，不以产品名称相同作为兼容证明 |
 
 来源：[DSH Adapter 扩展说明](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.1-rc.5/docs/cookbook/adding-an-llm-adapter.md)、[凭证接口](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.1-rc.5/packages/credentials/credentials/README.md)、[PiAiAdapter 公开导出](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.1-rc.5/packages/llm/llm-pi-ai/src/index.ts#L77)、[SAP 连接方式](https://sap.github.io/ai-sdk/docs/js/connecting-to-ai-core)、[SAP Foundation Models 客户端](https://sap.github.io/ai-sdk/docs/js/foundation-models)。
@@ -46,7 +53,7 @@ S0 已固定 DSH 0.2.1-rc.5、Node 24.19.0、npm 11.17.0、Cordis 4.0.5 和 HTTP
 flowchart LR
   D["DSH LLM 服务"] --> A["SapAiCoreAdapter"]
   A --> R["配置快照 / 模型与部署路由"]
-  A --> T["Chat Completions 传输与转换"]
+  A --> T["Chat Completions / Orchestration 转换，共用 HTTP/SSE"]
   R --> O["OAuth Token Manager"]
   O --> C["DSH credentials"]
   O --> I["配置的 OAuth 服务"]
@@ -359,6 +366,7 @@ TLS 按企业 CA 配置验证，不提供默认跳过验证模式。跨主机重
 | S4 完整配置与运维 | 只读 deployment discovery、能力解析、诊断、Kubernetes 示例 | 配置文档与诊断入口 | 多实例不串路由，显式部署不依赖管理权限 | S3 |
 | S5 真实 Agent 验证 | cn40 Qwen 流式、工具闭环、多轮、取消、到期刷新 | 实测报告和脱敏 fixture | 核心 live 验收通过，未支持能力明确 | S3、S4 |
 | S6 独立打包与交付 | pack 测试、本地 DSH 安装、升级回滚、文档、GitHub 和社区投稿 | 版本化构建、发行和投稿记录 | 满足第 13 节的独立交付要求；候选版明确剩余验证和审核状态 | S1–S4、S5 实测边界；不依赖 kagent |
+| S7 共用认证的五模型与思考选择 | 显式 Orchestration v2、五模型及思考预算预设、独立安装升级 | rc.2、实测矩阵及稳定逻辑 ID | 五模型流式/工具、四档思考、切换/取消、干净安装和本地更新通过；发行与社区状态如实记录 | S1–S4、既有 Orchestration 部署；不依赖平台工作 |
 
 初估 S0–S3 为 3–5 个工程日，S4–S6 为 2–4 个工程日。前提是能访问已有模型 Deployment，且端点支持必要的 streaming 和 tools。模型平台限制、账号申请和网络排障不计入；S0 后重估。两插件的代码工作可独立推进，但完整真实联调依赖两边核心功能均通过。
 

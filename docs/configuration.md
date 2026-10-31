@@ -7,12 +7,14 @@
 使用 DSH 插件安装界面安装 GitHub 仓库或 Release tgz。命令行方式如下；桌面版先正常退出应用，安装后重新打开：
 
 ~~~sh
-dsh plugin --profile desktop add github:solstice621/dsh-sap-ai-core#v0.1.0-rc.1
+dsh plugin --profile desktop add github:solstice621/dsh-sap-ai-core#v0.1.0-rc.2
 # 或使用预编译归档
-dsh plugin --profile desktop add /absolute/path/dsh-sap-ai-core-0.1.0-rc.1.tgz
+dsh plugin --profile desktop add /absolute/path/dsh-sap-ai-core-0.1.0-rc.2.tgz
 ~~~
 
-其他 CLI profile 使用其实际名称。bundle 自动注册 sap-ai-core 条目，初始 instances/providers 为空，不发网络请求。已有 DSH profile 必须提供 llm 和 credentials 服务。将 [cn40 patch](../examples/cn40-qwen/cordis.patch.yml) 的配置更新合并到 profile 的 cordis.patch.yml，填入已知的 OAuth host 与既有 Deployment ID。不要再次 insert 同一个插件。示例 provider 为 sap-ai-core-demo，逻辑模型为 qwen-demo。它们会进入 DSH provider/model 列表及 configurable-provider directory；界面只使用凭证引用，OAuth client secret 流程在 Node 进程运行。
+其他 CLI profile 使用其实际名称。bundle 自动注册 sap-ai-core 条目，初始 instances/providers 为空，不发网络请求。已有 DSH profile 必须提供 llm 和 credentials 服务。推荐将 [cn40 五模型 JSON](../examples/cn40-qwen/multi-models.json) 作为 profile 的 cordis.patch.yml 中现有 sap-ai-core 条目的 config，填入 OAuth host 和凭证引用。示例 provider 为 sap-ai-core-demo，五个模型共用该实例的认证和 Orchestration 部署。不要再次 insert 同一个插件。模型会进入 DSH provider/model 列表及 configurable-provider directory；OAuth client secret 流程在 Node 进程运行。
+
+原 [单模型 Chat Completions patch](../examples/cn40-qwen/cordis.patch.yml) 仍可使用。升级既有配置时保留逻辑 ID；例如 desktop 的 qwen-cn40 继续映射 Qwen 3.6 Plus，只更换明确的 provider 协议和部署选择。
 
 独立命令行诊断无需 kagent。在提供下述 DSH peers 的普通 npm 宿主目录中运行：
 
@@ -35,22 +37,22 @@ npm install @deepseek-ai/dsh-agent@0.2.1-rc.5 \
 
 ## 模型目录与可调用模型
 
-SAP AI Core 提供的模型取决于 region、实例及授权。插件没有把 Qwen 写死为唯一模型：每个 provider 的 models 数组可以登记多个逻辑模型，每项分别配置 upstreamModel 和 deployment。DSH 选择器展示这些已配置项；打开选择器不会自动查询云目录或创建部署。
+SAP AI Core 提供的模型取决于 region、实例及授权。每个 provider 的 models 数组登记逻辑模型，DSH 选择器展示这些配置项。0.1.0-rc.2 的 cn40 预设已经包含用户要求的五个聊天模型；它们共用一个实例、一份凭证和现有共享部署。打开选择器不会发起推理。该版本提供固定预设，尚不自动同步未来新增的云端目录项。
 
 2026-10-31 对当前 cn40 实例执行只读查询：GET /v2/lm/scenarios/foundation-models/models 返回下列六个目录项；对 default 资源组的完整 Deployment 列表查询发现一个 RUNNING foundation-models 部署，对应 qwen3.6-plus，另一个 RUNNING 部署属于 orchestration。查询没有发起推理。
 
-| 目录模型 | 当前 Chat Completions 接入状态 |
+| 目录模型 | rc.2 接入状态 |
 | --- | --- |
-| qwen3.6-plus | 已有对应部署，已在 DSH 配置并完成短验收 |
-| qwen3.6-flash | 目录可见；该资源组未发现对应 foundation-models 部署 |
-| qwen3.7-plus | 目录可见；该资源组未发现对应 foundation-models 部署 |
-| qwen3.7-max | 目录可见；该资源组未发现对应 foundation-models 部署 |
-| qwen3.8-max | 目录可见；该资源组未发现对应 foundation-models 部署 |
+| qwen3.6-plus | 共享 Orchestration 流式及工具闭环通过；原直连部署仍可用 |
+| qwen3.6-flash | 共享 Orchestration 流式及工具闭环通过 |
+| qwen3.7-plus | 共享 Orchestration 流式及工具闭环通过 |
+| qwen3.7-max | 共享 Orchestration 流式及工具闭环通过 |
+| qwen3.8-max | 共享 Orchestration 流式及工具闭环通过 |
 | text-embedding-v4 | Embeddings 模型，不属于本插件首版的聊天接口 |
 
-模型目录存在某项，不代表能把它的名字发送到 Qwen 3.6 Plus 的部署来切换模型。接入其他聊天模型时，先由部署者提供匹配的既有部署，再在 models 添加独立 ID、upstreamModel、deployment 和该路由的能力证据。也可用下文的唯一发现 selector 解析该模型已有部署；这不会自动枚举或注册模型。不能复制 qwen3.6-plus 的 verified 能力声明作为其他模型的实测结果。
+原先只显示一个模型，是配置使用了 Qwen 3.6 Plus 的 foundation-models 直连部署；实测向该部署发送 Flash 的模型名会返回 400。共享 Orchestration 接受请求中的模型名，因此这五个模型无需各建一个部署。五项能力均有各自的真实验证记录。新增其他模型时，仍需核对该实例的 allowedScenarios、协议和实际能力。
 
-Orchestration 可以提供另一种模型访问方式，但请求/响应协议不同，当前插件不把它伪装成 foundation-models 的 Chat Completions 路由。其他地区可能有不同目录，本次 cn40 查询不代表 SAP AI Core 的全球模型清单。DSH 的品牌介绍也不作为能力证据；当前插件向 DSH 声明的输入模态只有 text。
+Orchestration 通过显式 sap-orchestration-v2 协议接入。每次请求选定一个模型，插件不会在失败后私自改用其他模型或协议。其他地区可能有不同目录，本次 cn40 查询不代表 SAP AI Core 的全球模型清单；当前输入模态为 text。
 
 ## 三层映射
 
@@ -82,7 +84,7 @@ clientIdRef/clientSecretRef 是 DSH CredentialRef 名称，不能直接写 clien
 
 ## 路由
 
-默认 inferencePath 为 /v2/inference/deployments/{deploymentId}，统一附加 /chat/completions。Deployment ID 作为单一路径段编码；模板只接受一次 {deploymentId}，不允许 query、fragment、相对跳转或重复 suffix。apiVersion 仅作为 api-version query 编码；不填则不发送。
+默认 inferencePath 为 /v2/inference/deployments/{deploymentId}。openai-chat-completions 附加 /chat/completions；sap-orchestration-v2 附加 /v2/completion。Deployment ID 作为单一路径段编码；模板只接受一次 {deploymentId}，不允许 query、fragment、相对跳转或重复 suffix。apiVersion 仅用于 Chat Completions 的 api-version query；Orchestration 使用版本化路径，配置 apiVersion 会明确报错。
 
 显式 deployment.id 不触发管理 API，所以拥有推理权限而没有 Deployment 列表权限仍可用。deployment 诊断会主动读取管理 API，权限不足只说明管理检查不可用。
 
@@ -99,13 +101,34 @@ clientIdRef/clientSecretRef 是 DSH CredentialRef 名称，不能直接写 clien
 
 用它完整替换 deployment 对象。只有全部分页中恰好一个匹配的 RUNNING 部署才通过；可增加 selector.version。model 从 SAP backendDetails/backend_details.model 元数据读取，不猜 configurationName。零候选、多候选、重复分页或不完整列表均失败。deploymentUrl 必须属于 apiBaseUrl origin 或显式 allowedDeploymentOrigins；任何 HTTP 重定向均拒绝。404/410 仅使后续 attempt 的发现缓存失效。
 
+Orchestration 的 discovery 使用 {"selector":{"scenario":"orchestration"}}，不包含 selector.model/version；每个逻辑模型的 upstreamModel 和可选 upstreamModelVersion（cn40 为 latest）在请求体中选择模型。多个 RUNNING Orchestration 部署时，用 {"id":"EXISTING_SHARED_DEPLOYMENT"} 替换 deployment。此配置不会创建或修改云端部署。
+
+Orchestration 只包装现有消息和工具转换：历史放入 messages_history，工具调用消息省略 SAP 不接受的 null content；工具参数、ID 和结果原样保留。仅处理 final_result，避免 intermediate_results 重复输出及重复计费；服务端模型 max_retries 固定为 0，由 DSH 控制重试。
+
 ## 能力和参数
 
 capabilities 必须附 evidence.status 和 evidence.reference。streaming、tools、parallelToolCalls、reasoningContent、temperature、stop 默认 false。mode=streaming 要求 streaming=true；buffered 不算流式验收。图片和 structured output 首版不支持。
 
 compatibility 控制 systemRole、developerRole、maxTokensField、includeUsage、reasoningField、replayReasoning 及明确的 vendor parameters。身份、消息、工具、stream 和路由等保留参数不可被 parameters 覆盖。reasoningEfforts 是经过验证的 ID 到参数映射；未知 effort 明确拒绝，不将模型名称当作能力证据。
 
-maxOutputTokens 是本配置允许的单次请求上限，defaultMaxTokens 是缺省请求值；它们不代表厂家上下文容量。cn40 示例主动限制为 128，未声明 contextWindow。enable_thinking=false 已实测；默认 thinking 下 max_tokens 曾未限制总 completion，因此示例和小预算测试都关闭 thinking。
+maxOutputTokens 是本配置允许的 maxTokens 上限，defaultMaxTokens 是缺省请求值；它们不代表厂家上下文容量。五模型日常配置使用 4096；单模型验收示例仍限制为 128，live 脚本每次显式设置小预算。均未臆测 contextWindow。Qwen 的 max_tokens 限制答案部分，思考预算另外设置；usage.outputTokens 包含二者，reasoningTokens 是其中明细，不能相加重复计费。
+
+### 思考选项
+
+五模型预设通过 DSH 的公开 reasoning 元数据提供以下选项，默认 off：
+
+| DSH 选项 | 发送到 SAP 的模型参数 |
+| --- | --- |
+| 关闭思考（off） | enable_thinking=false |
+| 低（low） | enable_thinking=true，thinking_budget=1024 |
+| 中（medium） | enable_thinking=true，thinking_budget=4096 |
+| 高（high） | enable_thinking=true，thinking_budget=16384 |
+
+这些档位是可配置的思考预算预设。模型可以提前结束；提高预算允许更长的思考，并不要求用满。日常实例请求超时设置为 10 分钟，流空闲超时仍为 30 秒。选择一个模型的档位只影响该次调用，不改变其他模型或并发会话的设置。
+
+SAP Orchestration 的 reasoning_content 是 content 块数组，插件转换成独立的 DSH reasoning 增量。文本与正文保持分离；含签名或不透明内容的 reasoning 暂不支持。默认不回传原生 reasoning 历史，五个模型的思考模式工具闭环已经验证。
+
+参数依据：[阿里云深度思考](https://help.aliyun.com/zh/model-studio/deep-thinking)、[Chat Completions 参数](https://help.aliyun.com/zh/model-studio/qwen-api-via-openai-chat-completions)。Qwen 3.8 另有原生 reasoning_effort；本预设统一使用实测通过的 thinking_budget，二者不同时发送。高级配置若选 max_completion_tokens，SAP 要求它大于 thinking_budget；不能用较小的总输出上限测试较大的思考预算。真实证据与 Flash 高档的预算保护记录见 compatibility.md。
 
 工具 ID、原始 arguments JSON 和 tool result 顺序保留。多个交错增量按 index 组装。动态 system 提示词更新由 DSH 缺省投影处理；插件不声明尚未实测的 in-history 更新语义，并保留实际收到的 system 消息顺序。cn40 无需 reasoning replay 也能回传工具结果；默认关闭 replayReasoning。其他模型仅在必要时启用，原生状态按 provider、逻辑模型和配置路由 identity 限定，切换后不会盲目回传。
 

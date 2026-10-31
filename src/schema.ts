@@ -16,11 +16,11 @@ const instance = s.object({
   network, allowedDeploymentOrigins: s.array(s.string()), allowInsecureLocalhost: s.boolean(),
 });
 const model = s.object({
-  id: s.string().required(), name: s.string(), upstreamModel: s.string().required(),
+  id: s.string().required(), name: s.string(), upstreamModel: s.string().required(), upstreamModelVersion: s.string(),
   deployment: s.union([
     s.object({ id: s.string().required() }),
     s.object({
-      selector: s.object({ scenario: s.string().required(), model: s.string().required(), version: s.string() }).required(),
+      selector: s.object({ scenario: s.string().required(), model: s.string(), version: s.string() }).required(),
       cacheTtlMs: s.number(), maxPages: s.number(), pageSize: s.number(),
     }),
   ]).required(),
@@ -42,7 +42,7 @@ const model = s.object({
 });
 const provider = s.object({
   instance: s.string().required(), displayName: s.string(), resourceGroup: s.string().required(),
-  protocol: s.const('openai-chat-completions').required(), apiVersion: s.string(), inferencePath: s.string(),
+  protocol: s.union(['openai-chat-completions', 'sap-orchestration-v2']).required(), apiVersion: s.string(), inferencePath: s.string(),
   headers: s.dict(s.string()), models: s.array(model).required(),
   retryPolicy: s.object({ maxRetries: s.number(), initialDelayMs: s.number(), maxDelayMs: s.number(), jitterRatio: s.number() }),
   authRecovery: s.boolean(),

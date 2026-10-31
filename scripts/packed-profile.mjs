@@ -17,11 +17,20 @@ const server = createServer(async (req, res) => {
   const body = text ? JSON.parse(req.url === '/oauth/token' ? '{}' : text) : {};
   requests.push({ url: req.url, body });
   if (req.url === '/oauth/token') { res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify({ access_token: 'synthetic-token', token_type: 'bearer', expires_in: 60 })); return; }
-  const isTool = body.tools?.length && !body.messages.some(message => message.role === 'tool');
-  const delta = isTool ? { tool_calls: [{ index: 0, id: 'packed-call', type: 'function', function: { name: 'sap_diagnostic_multiply', arguments: '{"a":12,"b":13}' } }] } : { content: body.tools?.length ? '156' : 'packed installation works' };
+  const orchestration = req.url.endsWith('/v2/completion');
+  const model = orchestration ? body.config.modules.prompt_templating.model.name : body.model;
+  const messages = orchestration ? body.messages_history : body.messages;
+  const tools = orchestration ? body.config.modules.prompt_templating.model.params.tools : body.tools;
+  if (orchestration && messages.some(message => message.content === null)) { res.writeHead(400); res.end(); return; }
+  const isTool = tools?.length && !messages.some(message => message.role === 'tool');
+  const delta = isTool ? { tool_calls: [{ index: 0, id: 'packed-call', type: 'function', function: { name: 'sap_diagnostic_multiply', arguments: '{"a":12,"b":13}' } }] } : { content: tools?.length ? '156' : model };
   res.writeHead(200, { 'content-type': 'text/event-stream' });
   const values = [{ choices: [{ index: 0, delta, finish_reason: null }] }, { choices: [{ index: 0, delta: {}, finish_reason: isTool ? 'tool_calls' : 'stop' }] }, { choices: [], usage: { prompt_tokens: 20, completion_tokens: 10, total_tokens: 30 } }];
-  res.end(values.map(value => 'data: ' + JSON.stringify(value) + '\n\n').join('') + 'data: [DONE]\n\n');
+  if (orchestration && body.config.modules.prompt_templating.model.params.enable_thinking) {
+    values.unshift({ choices: [{ index: 0, delta: { reasoning_content: [{ content: 'synthetic reasoning' }] }, finish_reason: null }] });
+    values.at(-1).usage.completion_tokens_details = { reasoning_tokens: 2 };
+  }
+  res.end(values.map(value => 'data: ' + JSON.stringify(orchestration ? { request_id: 'packed-request', final_result: { ...value, model } } : value) + '\n\n').join('') + 'data: [DONE]\n\n');
 });
 server.listen(0, '127.0.0.1'); await once(server, 'listening');
 const origin = 'http://127.0.0.1:' + server.address().port;
@@ -66,6 +75,26 @@ try {
   await ctx.loader.update(sapId, { config: changed }); await ctx.loader.await();
   assert.equal(ctx.sapAiCore, first); await run();
   assert.match(requests.at(-1).url, /updated-deployment/);
+  const example = JSON.parse(await readFile('node_modules/dsh-sap-ai-core/examples/cn40-qwen/multi-models.json', 'utf8'));
+  const multi = structuredClone(config);
+  multi.providers['sap-pack'].protocol = 'sap-orchestration-v2';
+  multi.providers['sap-pack'].models = example.providers['sap-ai-core-demo'].models.map(model => ({ ...model, deployment: { id: 'shared-packed-deployment' } }));
+  await ctx.loader.update(sapId, { config: multi }); await ctx.loader.await();
+  const expectedModels = ['qwen3.6-plus', 'qwen3.6-flash', 'qwen3.7-plus', 'qwen3.7-max', 'qwen3.8-max'];
+  assert.deepEqual((await ctx.llm.listModels('sap-pack')).map(model => model.id), expectedModels);
+  for (const model of expectedModels) {
+    const info = await ctx.llm.resolveModelInfo('sap-pack', model);
+    assert.equal(info.id, model);
+    assert.deepEqual(info.reasoning.efforts.map(effort => effort.id), ['off', 'low', 'medium', 'high']);
+    assert.equal(info.reasoning.defaultEffort, 'off');
+    const chunks = [];
+    for await (const chunk of ctx.llm.stream({ provider: 'sap-pack', model, reasoningEffort: 'low', maxTokens: 32, messages: [{ role: 'user', content: [{ type: 'text', text: 'synthetic selection test' }] }] })) chunks.push(chunk);
+    assert.equal(chunks.filter(chunk => chunk.type === 'text-delta').map(chunk => chunk.text).join(''), model);
+    assert.equal(chunks.at(-1).type, 'finish');
+    assert.ok(chunks.some(chunk => chunk.type === 'reasoning-delta' && chunk.text === 'synthetic reasoning'));
+    assert.equal(requests.at(-1).url, '/v2/inference/deployments/shared-packed-deployment/v2/completion');
+    assert.equal(requests.at(-1).body.config.modules.prompt_templating.model.params.thinking_budget, 1024);
+  }
   const fiber = ctx.loader.resolve(sapId).fiber;
   ctx.loader.remove(sapId); await fiber.dispose();
   assert.deepEqual(ctx.llm.listProviders(), []); assert.deepEqual(ctx.llm.listConfigurableProviders(), []);
@@ -74,13 +103,15 @@ try {
   await run();
   await writeFile('plugin.json', JSON.stringify(config));
   if (process.argv.includes('--agents')) {
-    const host = await createDiagnosticHost(config, { environment, agents: true });
-    try {
-      const result = await host.ctx.sapAiCore.diagnose({ provider: 'sap-pack', model: 'packed-model', level: 'tools', allowInference: true, maxRequests: 2 });
-      assert.equal(result.toolExecutions, 1); assert.equal(result.requests, 2);
-    } finally { await host.close(); }
+    for (const candidate of [config, multi]) {
+      const host = await createDiagnosticHost(candidate, { environment, agents: true });
+      try {
+        const result = await host.ctx.sapAiCore.diagnose({ provider: 'sap-pack', model: candidate.providers['sap-pack'].models[0].id, level: 'tools', allowInference: true, maxRequests: 2 });
+        assert.equal(result.toolExecutions, 1); assert.equal(result.requests, 2);
+      } finally { await host.close(); }
+    }
   }
-  console.log(JSON.stringify({ installedProfile: true, bundleComposition: true, emptyConfiguration: true, registration: true, selection: true, volatileUpdate: true, unloadReload: true, toolLoop: process.argv.includes('--agents') }));
+  console.log(JSON.stringify({ installedProfile: true, bundleComposition: true, emptyConfiguration: true, registration: true, selection: true, fiveModelSelection: true, thinkingSelection: true, volatileUpdate: true, unloadReload: true, toolLoop: process.argv.includes('--agents'), orchestrationToolLoop: process.argv.includes('--agents') }));
 } finally {
   await ctx.fiber.dispose(); server.closeAllConnections(); await new Promise(resolve => server.close(resolve));
 }

@@ -1,10 +1,12 @@
 # dsh-sap-ai-core
 
-SAP AI Core 的独立 DSH 模型插件。负责 OAuth、Token 缓存与轮换、Deployment 路由、OpenAI 兼容 Chat Completions、真实 SSE、工具增量、usage、错误和取消；Agent 循环与工具执行由 DSH 完成。
+SAP AI Core 的独立 DSH 模型插件。共用一份 OAuth 认证，在 DSH 中直接选择模型；插件处理 Token、部署路由、流式响应和工具协议，DSH 负责 Agent 循环与工具执行。
 
-首个已验证环境是 cn40 qwen3.6-plus。中文多轮、流式、同一响应两个工具调用、工具回传、取消及并发已通过真实验证；独立候选版已安装到本地 DSH 并发布 GitHub Release，社区投稿待审核。Token 自然到期长测因刷新认证时网络失败而退出，尚未通过；随后直连认证和真实流式检查成功。kagent 的父 Agent 审批、页面恢复与平台任务管理属于可选集成，不作为本插件完成条件。完整状态见 [验收记录](docs/acceptance.md) 和 [实施进度](docs/progress.md)。
+0.1.0-rc.2 提供 cn40 的五个模型：**Qwen 3.6 Plus、3.6 Flash、3.7 Plus、3.7 Max、3.8 Max**。五个模型共用现有 Orchestration 部署，均已通过真实流式输出和 DSH 工具闭环；切换模型保留上下文、并发认证复用及取消后恢复也已验证。原有 OpenAI 兼容 Chat Completions 路由继续支持。
 
-插件支持多个模型，DSH 选择器展示配置的逻辑模型及其对应部署。SAP 模型目录不等于当前账号已部署、可直接调用的模型；cn40 当前的目录、部署及接口边界见 [模型目录说明](docs/configuration.md#模型目录与可调用模型)。
+五个模型均提供 **关闭思考／低／中／高** 选项，默认关闭。三档分别设置 1024／4096／16384 思考 Token 预算，思考与正文分别显示；这些数值是上限，模型可以提前结束。
+
+模型列表来自配置中的五模型预设，可按其他实例的能力扩展。Token 自然到期长测尚未通过，社区投稿待审核；详细边界见 [验收记录](docs/acceptance.md)、[实施进度](docs/progress.md) 和 [模型目录说明](docs/configuration.md#模型目录与可调用模型)。
 
 ## 使用
 
@@ -19,12 +21,14 @@ https://github.com/solstice621/dsh-sap-ai-core
 也可以使用 DSH 命令。桌面版先正常退出应用，再对 desktop profile 安装，完成后重新打开：
 
 ~~~sh
-dsh plugin --profile desktop add github:solstice621/dsh-sap-ai-core#v0.1.0-rc.1
+dsh plugin --profile desktop add github:solstice621/dsh-sap-ai-core#v0.1.0-rc.2
 ~~~
 
 其他 CLI profile 将 desktop 换成实际名称。仓库提交了 dist 和 dsh.bundle，无需允许安装期构建脚本。预编译 tgz 也可从 [GitHub Releases](https://github.com/solstice621/dsh-sap-ai-core/releases) 下载，作为同一安装界面的目标或上述 add 命令的参数。
 
-默认 bundle 以空 instances/providers 加载。将 [cn40 配置 patch](examples/cn40-qwen/cordis.patch.yml) 合并到该 profile 的 cordis.patch.yml，填写 OAuth host 与既有 Deployment ID；它更新已经安装的 sap-ai-core 条目。配置凭证引用后，选择 provider=sap-ai-core-demo、model=qwen-demo。凭证保存到 DSH credentials 服务或通过明确环境引用提供，不写入插件配置。
+默认 bundle 以空 instances/providers 加载。在 profile 的 cordis.patch.yml 中，将现有 sap-ai-core 条目的 config 设为 [cn40 五模型预设](examples/cn40-qwen/multi-models.json)，填写 OAuth host，并在 DSH credentials 中配置引用的 client ID 和 secret。预设只读查找唯一的 RUNNING Orchestration 部署；随后选择 SAP AI Core cn40 和所需 Qwen 模型。多个候选时填写已有的共享 Deployment ID。
+
+继续使用单模型直连接口时，可使用原 [Chat Completions 配置 patch](examples/cn40-qwen/cordis.patch.yml)。升级时保留已有 provider/model ID，例如本地 qwen-cn40 仍代表 Qwen 3.6 Plus。
 
 从源码构建：
 
@@ -33,9 +37,9 @@ npm ci --ignore-scripts
 npm run test:pack
 ~~~
 
-产物为 artifacts/dsh-sap-ai-core-0.1.0-rc.1.tgz，校验清单为 artifacts/manifest.json。DSH profile 需要提供 llm 和 credentials 服务。
+产物为 artifacts/dsh-sap-ai-core-0.1.0-rc.2.tgz，校验清单为 artifacts/manifest.json。DSH profile 需要提供 llm 和 credentials 服务。
 
-[配置说明](docs/configuration.md) 包含通用模板、cn40 JSON、三层映射、可选 Agent peers、代理/CA 和 Kubernetes Secret 示例。插件不依赖 kagent，不创建 SAP 模型 Deployment，不接入 Orchestration。
+[配置说明](docs/configuration.md) 包含凭证、两种明确协议、可选 Agent peers、代理/CA 和 Kubernetes Secret 示例。插件独立用于 DSH，复用已有 SAP 部署。
 
 ## 诊断
 
@@ -70,6 +74,22 @@ SAP_AICORE_LIVE=1 npm run test:live:cn40 -- --connection .local/cn40-connection.
 
 ~~~sh
 SAP_AICORE_LIVE=1 npm run test:live:expiry -- --connection .local/cn40-connection.json
+~~~
+
+五模型 Orchestration 验证使用已有部署与显式 service key，最多 24 次请求、每次至多 128 output tokens；包含并发流式、每个模型读取随机校验码的 DSH 工具闭环、中文上下文跨模型续接和取消后恢复。测试配置的 retryPolicy.maxRetries 必须为 0：
+
+~~~sh
+SAP_AICORE_LIVE=1 npm run test:live:orchestration -- \
+  --config /absolute/path/cn40-five-models.json --provider sap-ai-core-cn40 \
+  --service-key /absolute/path/service-key.json --instance cn40
+~~~
+
+思考选项的专门验收最多 35 次请求：简单算术回答上限为 32 tokens，工具阶段回答上限为 128、思考预算为 64。逐档验证日常思考预算，并设置每响应 4096 字符、45 秒及已知输出总计 12000 tokens 的保护；达到保护会使检查失败，已知 Token 总量超限时停止后续阶段。它验证五模型的关闭/低/中/高设置，以及思考模式的工具闭环：
+
+~~~sh
+SAP_AICORE_LIVE=1 npm run test:live:thinking -- \
+  --config /absolute/path/cn40-five-models.json --provider sap-ai-core-cn40 \
+  --service-key /absolute/path/service-key.json --instance cn40
 ~~~
 
 可选的本机 BYO 联合测试（不属于独立插件验收门槛）：
