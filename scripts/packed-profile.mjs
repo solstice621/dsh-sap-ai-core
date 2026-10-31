@@ -85,9 +85,10 @@ try {
   for (const model of expectedModels) {
     const info = await ctx.llm.resolveModelInfo('sap-pack', model);
     assert.equal(info.id, model);
-    assert.deepEqual(info.reasoning.efforts.map(effort => effort.id), ['off', 'low', 'medium', 'high']);
-    assert.equal(info.reasoning.defaultEffort, 'high');
-    for (const [effort, budget] of [[undefined, 128000], ['low', 32000], ['medium', 64000], ['off', undefined]]) {
+    assert.deepEqual(info.reasoning.efforts.map(effort => effort.id), ['off', 'low', 'medium', 'high', 'xhigh', 'max']);
+    assert.deepEqual(info.reasoning.efforts.map(effort => effort.name), ['关闭思考', '低', '中', '高', '极高', 'Max']);
+    assert.equal(info.reasoning.defaultEffort, 'max');
+    for (const [effort, budget] of [[undefined, 128000], ['low', 25600], ['medium', 51200], ['high', 76800], ['xhigh', 102400], ['max', 128000], ['off', undefined]]) {
       const chunks = [];
       for await (const chunk of ctx.llm.stream({ provider: 'sap-pack', model, ...(effort === undefined ? {} : { reasoningEffort: effort }), maxTokens: 32, messages: [{ role: 'user', content: [{ type: 'text', text: 'synthetic selection test' }] }] })) chunks.push(chunk);
       assert.equal(chunks.filter(chunk => chunk.type === 'text-delta').map(chunk => chunk.text).join(''), model);

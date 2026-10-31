@@ -88,3 +88,7 @@ dsh plugin --profile desktop remove dsh-sap-ai-core
 0.1.0-rc.2 增加五模型共用认证和 Orchestration v2。升级只替换 SAP 配置，保留原 provider/model ID 和凭证引用；本地 qwen-cn40 继续代表 Qwen 3.6 Plus。回滚到 rc.1 时同时恢复其 Chat Completions 配置，因为 rc.1 不认识新协议。已发布 tag、归档和校验值保持不变。S5 自然到期长测在认证网络失败后已退出，短测不替代自然到期验证。社区投稿尚待审核，完整状态以 progress.md 和 acceptance.md 为准。
 
 0.1.0-rc.3 将五模型示例的低/中/高思考预算更新为 32,000/64,000/128,000 Token，默认 high，日常请求超时为 30 分钟。既有安装需同步更新实例配置中的 reasoningEfforts、defaultReasoningEffort 和 requestTimeoutMs；仅更换插件包不会覆盖已有个人配置。升级前备份原配置；回滚到 rc.2 时恢复其包和对应配置备份。短请求验收只证明这些参数被接口接受，不证明生成满 128,000 思考 Token。
+
+0.1.0-rc.4 将开启思考的选项扩为低/中/高/极高/Max，预算分别为 25,600/51,200/76,800/102,400/128,000，默认 max，保留 off。安装归档后，将五个模型的 reasoningEfforts 完整映射及 defaultReasoningEffort 同步到 profile；保留当前 provider/model ID、凭证引用和其他配置。答案预算仍为 4096，日常请求超时仍为 30 分钟。新增的四个中间预算尚未分别进行 live 验证。
+
+已有会话如果显式保存了 high，升级后会使用新的 76,800 预算；要继续使用 128,000，请在该会话选择 Max。没有显式选项的新调用使用默认 max。不要批量重写历史会话；回滚到 rc.3 时一并恢复其 SAP 配置，正在使用 xhigh/max 的会话需改选 rc.3 支持的选项。

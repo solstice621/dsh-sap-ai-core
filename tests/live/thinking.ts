@@ -16,6 +16,7 @@ const { values } = parseArgs({ options: {
 assert.ok(values.config && values.provider && values['service-key'] && values.instance);
 const input = JSON.parse(await readFile(values.config, 'utf8'));
 const provider = values.provider;
+const efforts = ['off', 'low', 'medium', 'high', 'xhigh', 'max'];
 const configured = snapshotOf(input).config.providers[provider];
 assert.ok(configured && configured.protocol === 'sap-orchestration-v2' && configured.models.length === 5);
 assert.deepEqual(configured.models.map(model => model.upstreamModel).sort(), ['qwen3.6-flash', 'qwen3.6-plus', 'qwen3.7-max', 'qwen3.7-plus', 'qwen3.8-max']);
@@ -27,7 +28,7 @@ for (const model of input.providers[provider].models) {
   model.compatibility.maxTokensField = 'max_tokens';
   model.compatibility.reasoningEfforts.probe = { name: 'Budget probe', parameters: { enable_thinking: true, thinking_budget: 64 } };
 }
-const report: Record<string, unknown> = { suite: 'cn40-thinking-efforts', startedAt: new Date().toISOString(), sourceSha256: await sourceFingerprint(), status: 'running', requestBudget: 35, maxAnswerTokens: 32, toolMaxAnswerTokens: 128, outputCharacterGuard: 4096, knownOutputTokenBudget: 12000, results: [] };
+const report: Record<string, unknown> = { suite: 'cn40-thinking-efforts', startedAt: new Date().toISOString(), sourceSha256: await sourceFingerprint(), status: 'running', requestBudget: 40, maxAnswerTokens: 32, toolMaxAnswerTokens: 128, outputCharacterGuard: 4096, knownOutputTokenBudget: 12000, results: [] };
 report.thinkingPresets = configured.models.map(model => ({ model: model.upstreamModel, defaultEffort: model.compatibility.defaultReasoningEffort, budgets: Object.fromEntries(Object.entries(model.compatibility.reasoningEfforts).map(([effort, setting]) => [effort, setting.parameters.thinking_budget ?? null])) }));
 const results: Record<string, unknown>[] = [], attempts: AttemptDiagnostic[] = [];
 const host = await createDiagnosticHost(input, { serviceKeyFile: values['service-key'], serviceKeyInstance: values.instance, environment: {}, agents: true });
@@ -35,10 +36,10 @@ host.ctx.on('sap-ai-core/attempt', event => attempts.push(event));
 let failed = false;
 try {
   for (const model of configured.models) {
-    assert.deepEqual(Object.keys(model.compatibility.reasoningEfforts), ['off', 'low', 'medium', 'high']);
-    assert.equal(model.compatibility.defaultReasoningEffort, 'high');
+    assert.deepEqual(Object.keys(model.compatibility.reasoningEfforts), efforts);
+    assert.equal(model.compatibility.defaultReasoningEffort, 'max');
   }
-  for (const effort of ['off', 'low', 'medium', 'high']) {
+  for (const effort of efforts) {
     await Promise.all(configured.models.map(async model => {
       const value: Record<string, unknown> = { model: model.upstreamModel, level: 'thinking', effort, ok: false };
       let reasoningDeltas = 0, reasoningCharacters = 0, textCharacters = 0, finished = false;
@@ -51,8 +52,8 @@ try {
           if (chunk.type === 'finish') { assert.notEqual(chunk.reason.kind, 'error'); value.finish = chunk.reason.kind; finished = true; }
         }
         assert.ok(finished);
-        if (effort === 'off') { assert.equal(reasoningCharacters, 0); assert.ok(textCharacters > 0); }
-        else assert.ok(reasoningCharacters > 0);
+        assert.ok(textCharacters > 0);
+        if (effort === 'off') assert.equal(reasoningCharacters, 0);
         value.ok = true;
       } catch (error) { failed = true; Object.assign(value, failureFacts(error)); }
       results.push({ ...value, reasoningDeltas, reasoningCharacters, textCharacters });
@@ -60,16 +61,18 @@ try {
     report.results = results; await saveReport(values.out, { ...report, attempts });
     assert.ok(attempts.reduce((sum, attempt) => sum + (attempt.usage?.outputTokens ?? 0), 0) <= 12000, 'Known output budget exceeded');
   }
+  // Individual simple responses may use zero reasoning tokens; each model must
+  // still demonstrate reasoning output in at least one enabled setting.
+  for (const model of configured.models) assert.ok(results.some(result => result.model === model.upstreamModel && result.effort !== 'off' && typeof result.reasoningCharacters === 'number' && result.reasoningCharacters > 0), 'No reasoning output observed for model');
   for (const model of configured.models) {
     try {
       const result = await verifyToolRoundtrip(host.ctx, provider, model.id, 128, 'probe');
-      assert.ok(result.reasoningDeltas > 0);
       results.push({ ...result, model: model.upstreamModel, thinkingBudget: 64 });
     } catch (error) { failed = true; results.push({ model: model.upstreamModel, level: 'tools', thinkingBudget: 64, ok: false, ...failureFacts(error) }); }
     report.results = results; await saveReport(values.out, { ...report, attempts });
     assert.ok(attempts.reduce((sum, attempt) => sum + (attempt.usage?.outputTokens ?? 0), 0) <= 12000, 'Known output budget exceeded');
   }
-  assert.ok(attempts.length <= 35); assert.equal(failed, false);
+  assert.ok(attempts.length <= 40); assert.equal(failed, false);
   assert.ok(attempts.every(attempt => attempt.usage?.outputTokens !== undefined));
   report.status = 'passed';
 } catch (error) { report.status = 'failed'; report.error = failureFacts(error); process.exitCode = 1; }

@@ -4,6 +4,12 @@
 
 这不是对全部 SAP AI Core region、Deployment 或模型的兼容承诺。配置和 mock 验证了参数化及隔离；新真实环境需要补验收。
 
+## rc.4 五档等距预设
+
+五模型配置提供低 25,600、中 51,200、高 76,800、极高 102,400、Max 128,000，默认 max，另保留关闭思考。所有开启档位发送 enable_thinking=true 和 thinking_budget；DSH 的 xhigh/max ID 不转换为模型原生 reasoning_effort。
+
+本轮只调整预设和元数据。test:pack 覆盖五模型的六个显示选项、默认 max、逐档请求参数和调用隔离；该本地 mock 检查不替代 SAP 真实验证。128,000 的参数接受证据来自下列 rc.3 记录；25,600、51,200、76,800、102,400 尚未分别补做 live 请求。满 128,000 思考 Token 生成及自然 Token 到期长测仍未验证。
+
 ## rc.3 思考预算参数验收
 
 2026-10-31 14:53（Asia/Shanghai），同一 cn40 Orchestration 路由对五个模型分别发送 32,000、64,000、128,000 的 thinking_budget，15 次推理均成功完成。高档的五次调用没有显式指定 reasoningEffort，确认 defaultReasoningEffort=high 对应 128,000。

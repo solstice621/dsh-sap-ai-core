@@ -70,25 +70,39 @@
                 "name": "低",
                 "parameters": {
                   "enable_thinking": true,
-                  "thinking_budget": 32000
+                  "thinking_budget": 25600
                 }
               },
               "medium": {
                 "name": "中",
                 "parameters": {
                   "enable_thinking": true,
-                  "thinking_budget": 64000
+                  "thinking_budget": 51200
                 }
               },
               "high": {
                 "name": "高",
                 "parameters": {
                   "enable_thinking": true,
+                  "thinking_budget": 76800
+                }
+              },
+              "xhigh": {
+                "name": "极高",
+                "parameters": {
+                  "enable_thinking": true,
+                  "thinking_budget": 102400
+                }
+              },
+              "max": {
+                "name": "Max",
+                "parameters": {
+                  "enable_thinking": true,
                   "thinking_budget": 128000
                 }
               }
             },
-            "defaultReasoningEffort": "high"
+            "defaultReasoningEffort": "max"
           },
           "maxOutputTokens": 4096,
           "defaultMaxTokens": 4096,
@@ -133,25 +147,39 @@
                 "name": "低",
                 "parameters": {
                   "enable_thinking": true,
-                  "thinking_budget": 32000
+                  "thinking_budget": 25600
                 }
               },
               "medium": {
                 "name": "中",
                 "parameters": {
                   "enable_thinking": true,
-                  "thinking_budget": 64000
+                  "thinking_budget": 51200
                 }
               },
               "high": {
                 "name": "高",
                 "parameters": {
                   "enable_thinking": true,
+                  "thinking_budget": 76800
+                }
+              },
+              "xhigh": {
+                "name": "极高",
+                "parameters": {
+                  "enable_thinking": true,
+                  "thinking_budget": 102400
+                }
+              },
+              "max": {
+                "name": "Max",
+                "parameters": {
+                  "enable_thinking": true,
                   "thinking_budget": 128000
                 }
               }
             },
-            "defaultReasoningEffort": "high"
+            "defaultReasoningEffort": "max"
           },
           "maxOutputTokens": 4096,
           "defaultMaxTokens": 4096,
@@ -196,25 +224,39 @@
                 "name": "低",
                 "parameters": {
                   "enable_thinking": true,
-                  "thinking_budget": 32000
+                  "thinking_budget": 25600
                 }
               },
               "medium": {
                 "name": "中",
                 "parameters": {
                   "enable_thinking": true,
-                  "thinking_budget": 64000
+                  "thinking_budget": 51200
                 }
               },
               "high": {
                 "name": "高",
                 "parameters": {
                   "enable_thinking": true,
+                  "thinking_budget": 76800
+                }
+              },
+              "xhigh": {
+                "name": "极高",
+                "parameters": {
+                  "enable_thinking": true,
+                  "thinking_budget": 102400
+                }
+              },
+              "max": {
+                "name": "Max",
+                "parameters": {
+                  "enable_thinking": true,
                   "thinking_budget": 128000
                 }
               }
             },
-            "defaultReasoningEffort": "high"
+            "defaultReasoningEffort": "max"
           },
           "maxOutputTokens": 4096,
           "defaultMaxTokens": 4096,
@@ -259,25 +301,39 @@
                 "name": "低",
                 "parameters": {
                   "enable_thinking": true,
-                  "thinking_budget": 32000
+                  "thinking_budget": 25600
                 }
               },
               "medium": {
                 "name": "中",
                 "parameters": {
                   "enable_thinking": true,
-                  "thinking_budget": 64000
+                  "thinking_budget": 51200
                 }
               },
               "high": {
                 "name": "高",
                 "parameters": {
                   "enable_thinking": true,
+                  "thinking_budget": 76800
+                }
+              },
+              "xhigh": {
+                "name": "极高",
+                "parameters": {
+                  "enable_thinking": true,
+                  "thinking_budget": 102400
+                }
+              },
+              "max": {
+                "name": "Max",
+                "parameters": {
+                  "enable_thinking": true,
                   "thinking_budget": 128000
                 }
               }
             },
-            "defaultReasoningEffort": "high"
+            "defaultReasoningEffort": "max"
           },
           "maxOutputTokens": 4096,
           "defaultMaxTokens": 4096,
@@ -322,25 +378,39 @@
                 "name": "低",
                 "parameters": {
                   "enable_thinking": true,
-                  "thinking_budget": 32000
+                  "thinking_budget": 25600
                 }
               },
               "medium": {
                 "name": "中",
                 "parameters": {
                   "enable_thinking": true,
-                  "thinking_budget": 64000
+                  "thinking_budget": 51200
                 }
               },
               "high": {
                 "name": "高",
                 "parameters": {
                   "enable_thinking": true,
+                  "thinking_budget": 76800
+                }
+              },
+              "xhigh": {
+                "name": "极高",
+                "parameters": {
+                  "enable_thinking": true,
+                  "thinking_budget": 102400
+                }
+              },
+              "max": {
+                "name": "Max",
+                "parameters": {
+                  "enable_thinking": true,
                   "thinking_budget": 128000
                 }
               }
             },
-            "defaultReasoningEffort": "high"
+            "defaultReasoningEffort": "max"
           },
           "maxOutputTokens": 4096,
           "defaultMaxTokens": 4096,

@@ -6,6 +6,8 @@ S7 追加 0.1.0-rc.2：五个 Qwen 共用认证与现有 Orchestration 部署，
 
 0.1.0-rc.3 将低/中/高预算更新为 32,000/64,000/128,000，默认 high，日常请求超时为 30 分钟；推理传输和认证实现未改。14:53 已完成五模型各档的 15 次参数接受检查，高档五次均通过默认值调用。一次简单题无思考内容引起的测试断言失败与后续 7 项续验分别保留；这不是最大长度压力测试，明细见 compatibility.md。类型检查通过，test:pack 增加当前预设的默认高档及各显式选项校验；归档结果见 artifacts/manifest.json，发行入口为 [v0.1.0-rc.3](https://github.com/solstice621/dsh-sap-ai-core/releases/tag/v0.1.0-rc.3)。
 
+0.1.0-rc.4 按最新要求提供低/中/高/极高/Max 五档等距预算：25,600/51,200/76,800/102,400/128,000，默认 max，另保留关闭思考。五个模型共用同一映射，传输和认证实现不变。本轮验证入口为 npm run typecheck、npm run test:pack 和 git diff --check；打包检查覆盖六个选项的显示、默认值及实际请求参数，结果与本地安装记录见 artifacts/manifest.json 和 PLAN.md。四个新中间数值未分别新增 live 验证；128,000 沿用 rc.3 的五模型短请求证据。发行入口为 [v0.1.0-rc.4](https://github.com/solstice621/dsh-sap-ai-core/releases/tag/v0.1.0-rc.4)，社区仍沿用 PR #10730。
+
 | 阶段 | 状态与交付 | 验证与未关闭事项 |
 | --- | --- | --- |
 | S0 | 完成：固定 Node 24.19.0、npm 11.17.0、DSH 0.2.1-rc.5 和 lockfile；选定独立 Adapter 与 undici/eventsource-parser 单一传输 | 六项复用比较见 ADR 001；实际 cn40 OAuth/SSE/tools 请求形状、公司代理与本地 TLS 契约已验证 |
@@ -15,7 +17,7 @@ S7 追加 0.1.0-rc.2：五个 Qwen 共用认证与现有 Orchestration 部署，
 | S4 | 完成：唯一发现与分页、能力校验、分级诊断、示例和运维文档 | config/auth/deployment 无推理；付费诊断显式预算；本地 kind 的 Secret 引用、环境代理、non-root/只读根目录及真实 stream 通过；生产集群与 Secret 轮换未验证 |
 | S5 | 短验收通过，S-L07 尚未通过：S-L01、02、03、04、05、06、08 已有真实回归 | 11 次请求验证中文多轮、真实增量、多工具回传、取消后恢复及并发；长测第三 attempt 在 auth 阶段发生 TRANSPORT 错误并退出 |
 | S6 | 独立候选版交付完成；社区上架审核中 | 干净打包安装、本地 Desktop、公开源码、Release 和社区投稿已完成；既有 rc.1 tag/归档保持不变。平台联合验收不作为门槛 |
-| S7 | 五模型与思考功能的候选版；实现及独立验收通过 | 复用 OAuth/HTTP/SSE；五模型流式/工具、上下文切换、取消及四档思考有实测；社区审核单独记录 |
+| S7 | 五模型与思考功能的候选版；rc.4 扩为五个开启档位及关闭选项 | 五模型流式/工具、上下文切换、取消及 rc.2/rc.3 预算有实测；rc.4 四个新中间值仅纳入确定性检查；社区审核单独记录 |
 
 ## rc.2 工作树验证
 

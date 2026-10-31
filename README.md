@@ -2,9 +2,9 @@
 
 SAP AI Core 的独立 DSH 模型插件。共用一份 OAuth 认证，在 DSH 中直接选择模型；插件处理 Token、部署路由、流式响应和工具协议，DSH 负责 Agent 循环与工具执行。
 
-0.1.0-rc.3 提供 cn40 的五个模型：**Qwen 3.6 Plus、3.6 Flash、3.7 Plus、3.7 Max、3.8 Max**。五个模型共用现有 Orchestration 部署，均已通过真实流式输出和 DSH 工具闭环；切换模型保留上下文、并发认证复用及取消后恢复也已验证。原有 OpenAI 兼容 Chat Completions 路由继续支持。
+0.1.0-rc.4 提供 cn40 的五个模型：**Qwen 3.6 Plus、3.6 Flash、3.7 Plus、3.7 Max、3.8 Max**。五个模型共用现有 Orchestration 部署，均已通过真实流式输出和 DSH 工具闭环；切换模型保留上下文、并发认证复用及取消后恢复也已验证。原有 OpenAI 兼容 Chat Completions 路由继续支持。
 
-五个模型均提供 **关闭思考／低／中／高** 选项，默认使用高档。低、中、高分别设置 **32,000／64,000／128,000** 思考 Token 预算，思考与正文分别显示。这些是可配置的预算上限，模型可以提前结束，简单问题也可能直接回答；实际可生成长度仍受模型、服务和超时限制。
+五个模型均提供 **低／中／高／极高／Max** 五档思考强度，默认 **Max**，并保留关闭思考选项。五档分别设置 **25,600／51,200／76,800／102,400／128,000** 思考 Token 预算，每档相差 25,600；思考与正文分别显示。这些是可配置的预算上限，模型可以提前结束，简单问题也可能直接回答；实际可生成长度仍受模型、服务和超时限制。128,000 已有五模型短请求的参数接受证据，新增的四个中间数值尚未分别进行真实请求验收。
 
 模型列表来自配置中的五模型预设，可按其他实例的能力扩展。Token 自然到期长测尚未通过，社区投稿待审核；详细边界见 [验收记录](docs/acceptance.md)、[实施进度](docs/progress.md) 和 [模型目录说明](docs/configuration.md#模型目录与可调用模型)。
 
@@ -21,7 +21,7 @@ https://github.com/solstice621/dsh-sap-ai-core
 也可以使用 DSH 命令。桌面版先正常退出应用，再对 desktop profile 安装，完成后重新打开：
 
 ~~~sh
-dsh plugin --profile desktop add github:solstice621/dsh-sap-ai-core#v0.1.0-rc.3
+dsh plugin --profile desktop add github:solstice621/dsh-sap-ai-core#v0.1.0-rc.4
 ~~~
 
 其他 CLI profile 将 desktop 换成实际名称。仓库提交了 dist 和 dsh.bundle，无需允许安装期构建脚本。预编译 tgz 也可从 [GitHub Releases](https://github.com/solstice621/dsh-sap-ai-core/releases) 下载，作为同一安装界面的目标或上述 add 命令的参数。
@@ -37,7 +37,7 @@ npm ci --ignore-scripts
 npm run test:pack
 ~~~
 
-产物为 artifacts/dsh-sap-ai-core-0.1.0-rc.2.tgz，校验清单为 artifacts/manifest.json。DSH profile 需要提供 llm 和 credentials 服务。
+产物为 artifacts/dsh-sap-ai-core-0.1.0-rc.4.tgz，校验清单为 artifacts/manifest.json。DSH profile 需要提供 llm 和 credentials 服务。
 
 [配置说明](docs/configuration.md) 包含凭证、两种明确协议、可选 Agent peers、代理/CA 和 Kubernetes Secret 示例。插件独立用于 DSH，复用已有 SAP 部署。
 
@@ -84,7 +84,7 @@ SAP_AICORE_LIVE=1 npm run test:live:orchestration -- \
   --service-key /absolute/path/service-key.json --instance cn40
 ~~~
 
-思考选项的专门验收最多 35 次请求：简单算术回答上限为 32 tokens，工具阶段回答上限为 128、思考预算为 64。逐档验证日常思考预算，并设置每响应 4096 字符、45 秒及已知输出总计 12000 tokens 的保护；达到保护会使检查失败，已知 Token 总量超限时停止后续阶段。它验证五模型的关闭/低/中/高设置，以及思考模式的工具闭环：
+思考选项的专门验收最多 40 次请求：简单算术回答上限为 32 tokens，工具阶段回答上限为 128、思考预算为 64。逐档验证日常思考预算，并设置每响应 4096 字符、45 秒及已知输出总计 12000 tokens 的保护；达到保护会使检查失败，已知 Token 总量超限时停止后续阶段。它验证五模型的关闭/低/中/高/极高/Max 设置，以及思考模式的工具闭环。单次简单回答允许没有思考内容，每个模型仍需在至少一个开启档位输出思考：
 
 ~~~sh
 SAP_AICORE_LIVE=1 npm run test:live:thinking -- \
