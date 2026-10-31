@@ -4,6 +4,22 @@
 
 这不是对全部 SAP AI Core region、Deployment 或模型的兼容承诺。配置和 mock 验证了参数化及隔离；新真实环境需要补验收。
 
+## rc.3 思考预算参数验收
+
+2026-10-31 14:53（Asia/Shanghai），同一 cn40 Orchestration 路由对五个模型分别发送 32,000、64,000、128,000 的 thinking_budget，15 次推理均成功完成。高档的五次调用没有显式指定 reasoningEffort，确认 defaultReasoningEffort=high 对应 128,000。
+
+| 模型 | 接口接受的思考预算 | 高档实际思考 Token |
+| --- | --- | --- |
+| Qwen 3.6 Plus | 32,000 / 64,000 / 128,000 | 142 |
+| Qwen 3.6 Flash | 32,000 / 64,000 / 128,000 | 198 |
+| Qwen 3.7 Plus | 32,000 / 64,000 / 128,000 | 61 |
+| Qwen 3.7 Max | 32,000 / 64,000 / 128,000 | 31 |
+| Qwen 3.8 Max | 32,000 / 64,000 / 128,000 | 35 |
+
+验收每次答案上限为 32 Token，并设置 45 秒、4096 字符和已知输出总量保护。15 次已知 usage 合计 1933 total、483 input、1450 output，其中 1385 reasoning；reasoning 已包含在 output 中。该验收证明接口接受这些参数及默认档位生效，不证明模型能够生成满 128,000 思考 Token，不声明厂商最大容量。
+
+首批 8 次的接口均成功；其中 Qwen 3.7 Plus 的 64,000 请求直接回答简单题，reasoningTokens=0，触发了要求非空思考的验收断言，因此原报告仍为 failed。续验允许简单任务直接回答，完成剩余 7 个组合；没有重跑前 8 次来替换记录。汇总为 .local/cn40-thinking-128k-acceptance.json，原始记录为 .local/cn40-thinking-128k-report.json 和 .local/cn40-thinking-128k-continuation-report.json。源代码/依赖输入摘要为 ebf7062b0216442a7fc036062a8d378476a136ed65cc8a517051bd485c57fda7。
+
 ## Orchestration v2 五模型（rc.2）
 
 2026-10-31 13:34（Asia/Shanghai），同一既有部署（摘要 405623ec09b5）通过 /v2/completion 调用下列五个模型，model version=latest、enable_thinking=false。五路同时开始仅获取一次 OAuth Token，四个请求共享等待。

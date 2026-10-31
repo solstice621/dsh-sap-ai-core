@@ -31,6 +31,12 @@
 
 rc.2 的 tests/contract/orchestration.test.ts 追加六项契约：共用认证和部署的五模型隔离、literal 消息与工具回传、final_result 去包装及错误、唯一 Orchestration discovery、取消释放、思考数组与选项/usage 转换。打包验证也覆盖五个模型、思考选项和两种协议的 DSH 工具闭环。
 
+## rc.3 预算与默认档位
+
+2026-10-31 14:53（Asia/Shanghai）完成五模型的 32,000/64,000/128,000 思考预算参数检查，共 15 次接口调用成功，其中高档均通过默认值选择。首批验证中一次成功回答没有思考 Token，导致测试断言失败，原始 failed 记录保留；续验完成剩余 7 项。该检查使用短问题和 32-token 答案预算，不代表跑满 128,000 思考 Token。实际用量、分批结果及源代码摘要见 [兼容矩阵](compatibility.md#rc3-思考预算参数验收)。
+
+test:pack 检查更新后的发布预设：默认 high 发送 128,000，显式 low/medium 分别发送 32,000/64,000，off 关闭思考；覆盖五个模型，并确认本次调用的选项不会污染后续调用。当前归档的安装及卸载结果以 artifacts/manifest.json 为准。
+
 ## rc.2 五模型真实验收
 
 2026-10-31 13:34（Asia/Shanghai）通过以下预算测试，使用已有共享 Orchestration 部署，没有创建云端资源：

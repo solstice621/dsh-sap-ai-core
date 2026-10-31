@@ -6,11 +6,17 @@
 
 ## 1 目标与支持范围
 
-2026-10-31 新增用户要求：像 opencode auth 一样，共用一次认证并在 DSH 选择 Qwen 3.6 Plus、3.6 Flash、3.7 Plus、3.7 Max、3.8 Max。追加 S7：通过既有的共享 Orchestration 部署接入这五个模型；显式增加 sap-orchestration-v2 协议，复用认证、HTTP/SSE 和 DSH 转换。包中的 cn40 多模型配置提供五个入口；未知模型不会借用这些模型的 verified 能力声明。13:34 已完成五个模型的真实流式和工具闭环、中文上下文跨模型续接、并发认证与取消后恢复，19/24 请求。当前交付版本为 0.1.0-rc.2，打包、本地升级和发行记录见 docs/progress.md；不创建云端部署或扩展平台工作。
+2026-10-31 新增用户要求：像 opencode auth 一样，共用一次认证并在 DSH 选择 Qwen 3.6 Plus、3.6 Flash、3.7 Plus、3.7 Max、3.8 Max。追加 S7：通过既有的共享 Orchestration 部署接入这五个模型；显式增加 sap-orchestration-v2 协议，复用认证、HTTP/SSE 和 DSH 转换。包中的 cn40 多模型配置提供五个入口；未知模型不会借用这些模型的 verified 能力声明。13:34 已完成五个模型的真实流式和工具闭环、中文上下文跨模型续接、并发认证与取消后恢复，19/24 请求。当前交付版本为 0.1.0-rc.3，打包、本地升级和发行记录见 docs/progress.md；不创建云端部署或扩展平台工作。
 
 用户随后要求思考强度选项：同一 S7 提供关闭/低/中/高，使用经过验证的 enable_thinking 与 thinking_budget 预设，默认关闭；SAP 的思考块单独转换为 DSH reasoning。14:02–14:03 五模型全部选项已有成功证据，思考模式工具闭环均通过；Flash 高档的一次预算保护退出与单独补验如实分开记录。43 项确定性测试通过。
 
 14:12 最终 rc.2 归档已在本地 DSH Desktop 0.2.1-rc.5 / Node 24.21.0 加载；五模型均返回关闭/低/中/高及默认关闭。Flash 低档的一次真实桌面请求收到 56 个 reasoning 增量并完成答案，usage=202（23 input、179 output，其中 173 reasoning，不重复相加）。已核对运行中的协议文件与最终 dist 摘要一致；临时观察插件已移除，DSH 正常重启，日常五模型配置与其他插件保持一致。归档 SHA-256 为 e9c4c6199049afd6b4387c3e0ea8dd55a836a5f853b4fb7de402c8d0a6b9c83f；脱敏证据为 .local/desktop-rc2/thinking-runtime-report.json 和 post-validation-state.json。
+
+用户随后要求默认最高档，并以 128,000 Token 为最高预算分档。rc.3 将五模型的低/中/高设置为 32,000/64,000/128,000，默认 high；日常请求超时提高到 30 分钟。该值是显式请求的思考预算，不是借用 GPT 总输出容量声明 Qwen 厂商上限。先以有界短请求检查参数接受情况，再完成打包、本地安装与新版本发行；不覆盖已发布的 rc.1/rc.2。详细实测边界记录在 docs/compatibility.md。
+
+14:53 已完成 rc.3 的 15 个参数组合调用，全部接口成功，五模型的默认高档均返回思考与答案。首批一次直接回答触发非空思考断言，原失败报告保留；续验只执行剩余 7 项。实际总用量 1933 Token，未进行生成满预算的压力测试。汇总为 .local/cn40-thinking-128k-acceptance.json；类型检查已通过，打包与桌面验证继续使用既有公开接口和独立安装流程。
+
+14:58 rc.3 通过 npm run test:pack 的独立安装与 Agent 工具闭环检查，包括五模型的默认高档、显式中/低/关闭选项。最终归档 SHA-256 为 78dfd6ce694950766404da7a1ffc655bfe035ab53650cb6794b249afa0263cb2，87 个打包文件与工作树一致。已通过 DSH 自带 CLI 升级本地 desktop profile 并正常重启，保留原 ID、凭证引用和其他插件配置；安装包代码、版本和重启后的配置均已核对。安装及备份记录为 .local/rc3-delivery/install-state.json。
 
 独立桌面交付记录（2026-10-31）：0.1.0-rc.1 已通过桌面版自带 CLI 安装到 desktop profile，并以用户已有 cn40 实例配置 sap-ai-core-cn40 / qwen-cn40。DSH 0.2.1-rc.5 自带 Node 24.21.0 上的 37 项确定性测试通过；实际桌面进程中的一请求验证收到 11 个真实增量，usage=55（23 input + 32 output）。已保留原有插件、配置与凭证，仅新增独立 SAP credential refs；临时验收插件已从 profile 移除。桌面安装归档 SHA-256：8530892283267df37cb620343d59c793b27e08e3c743b6d20530b812aceba6cc。独立发行使用 MIT、GitHub 源码及预编译 tgz，不等待 kagent 的剩余平台项；S5/S6 状态仍按上文保留。
 

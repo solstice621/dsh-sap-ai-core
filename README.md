@@ -2,9 +2,9 @@
 
 SAP AI Core 的独立 DSH 模型插件。共用一份 OAuth 认证，在 DSH 中直接选择模型；插件处理 Token、部署路由、流式响应和工具协议，DSH 负责 Agent 循环与工具执行。
 
-0.1.0-rc.2 提供 cn40 的五个模型：**Qwen 3.6 Plus、3.6 Flash、3.7 Plus、3.7 Max、3.8 Max**。五个模型共用现有 Orchestration 部署，均已通过真实流式输出和 DSH 工具闭环；切换模型保留上下文、并发认证复用及取消后恢复也已验证。原有 OpenAI 兼容 Chat Completions 路由继续支持。
+0.1.0-rc.3 提供 cn40 的五个模型：**Qwen 3.6 Plus、3.6 Flash、3.7 Plus、3.7 Max、3.8 Max**。五个模型共用现有 Orchestration 部署，均已通过真实流式输出和 DSH 工具闭环；切换模型保留上下文、并发认证复用及取消后恢复也已验证。原有 OpenAI 兼容 Chat Completions 路由继续支持。
 
-五个模型均提供 **关闭思考／低／中／高** 选项，默认关闭。三档分别设置 1024／4096／16384 思考 Token 预算，思考与正文分别显示；这些数值是上限，模型可以提前结束。
+五个模型均提供 **关闭思考／低／中／高** 选项，默认使用高档。低、中、高分别设置 **32,000／64,000／128,000** 思考 Token 预算，思考与正文分别显示。这些是可配置的预算上限，模型可以提前结束，简单问题也可能直接回答；实际可生成长度仍受模型、服务和超时限制。
 
 模型列表来自配置中的五模型预设，可按其他实例的能力扩展。Token 自然到期长测尚未通过，社区投稿待审核；详细边界见 [验收记录](docs/acceptance.md)、[实施进度](docs/progress.md) 和 [模型目录说明](docs/configuration.md#模型目录与可调用模型)。
 
@@ -21,7 +21,7 @@ https://github.com/solstice621/dsh-sap-ai-core
 也可以使用 DSH 命令。桌面版先正常退出应用，再对 desktop profile 安装，完成后重新打开：
 
 ~~~sh
-dsh plugin --profile desktop add github:solstice621/dsh-sap-ai-core#v0.1.0-rc.2
+dsh plugin --profile desktop add github:solstice621/dsh-sap-ai-core#v0.1.0-rc.3
 ~~~
 
 其他 CLI profile 将 desktop 换成实际名称。仓库提交了 dist 和 dsh.bundle，无需允许安装期构建脚本。预编译 tgz 也可从 [GitHub Releases](https://github.com/solstice621/dsh-sap-ai-core/releases) 下载，作为同一安装界面的目标或上述 add 命令的参数。

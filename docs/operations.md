@@ -86,3 +86,5 @@ dsh plugin --profile desktop remove dsh-sap-ai-core
 历史会话继续引用原 provider/model ID；重装时保留这些 ID。确需重命名时，为原 ID 保留兼容配置，或在新会话中选择新 ID；不要批量修改历史 JSONL。凭证引用可以保留供重装使用；彻底撤回时，通过 DSH 凭证服务单独删除本插件持有且不再被其他配置引用的项。
 
 0.1.0-rc.2 增加五模型共用认证和 Orchestration v2。升级只替换 SAP 配置，保留原 provider/model ID 和凭证引用；本地 qwen-cn40 继续代表 Qwen 3.6 Plus。回滚到 rc.1 时同时恢复其 Chat Completions 配置，因为 rc.1 不认识新协议。已发布 tag、归档和校验值保持不变。S5 自然到期长测在认证网络失败后已退出，短测不替代自然到期验证。社区投稿尚待审核，完整状态以 progress.md 和 acceptance.md 为准。
+
+0.1.0-rc.3 将五模型示例的低/中/高思考预算更新为 32,000/64,000/128,000 Token，默认 high，日常请求超时为 30 分钟。既有安装需同步更新实例配置中的 reasoningEfforts、defaultReasoningEffort 和 requestTimeoutMs；仅更换插件包不会覆盖已有个人配置。升级前备份原配置；回滚到 rc.2 时恢复其包和对应配置备份。短请求验收只证明这些参数被接口接受，不证明生成满 128,000 思考 Token。

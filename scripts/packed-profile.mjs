@@ -86,14 +86,18 @@ try {
     const info = await ctx.llm.resolveModelInfo('sap-pack', model);
     assert.equal(info.id, model);
     assert.deepEqual(info.reasoning.efforts.map(effort => effort.id), ['off', 'low', 'medium', 'high']);
-    assert.equal(info.reasoning.defaultEffort, 'off');
-    const chunks = [];
-    for await (const chunk of ctx.llm.stream({ provider: 'sap-pack', model, reasoningEffort: 'low', maxTokens: 32, messages: [{ role: 'user', content: [{ type: 'text', text: 'synthetic selection test' }] }] })) chunks.push(chunk);
-    assert.equal(chunks.filter(chunk => chunk.type === 'text-delta').map(chunk => chunk.text).join(''), model);
-    assert.equal(chunks.at(-1).type, 'finish');
-    assert.ok(chunks.some(chunk => chunk.type === 'reasoning-delta' && chunk.text === 'synthetic reasoning'));
-    assert.equal(requests.at(-1).url, '/v2/inference/deployments/shared-packed-deployment/v2/completion');
-    assert.equal(requests.at(-1).body.config.modules.prompt_templating.model.params.thinking_budget, 1024);
+    assert.equal(info.reasoning.defaultEffort, 'high');
+    for (const [effort, budget] of [[undefined, 128000], ['low', 32000], ['medium', 64000], ['off', undefined]]) {
+      const chunks = [];
+      for await (const chunk of ctx.llm.stream({ provider: 'sap-pack', model, ...(effort === undefined ? {} : { reasoningEffort: effort }), maxTokens: 32, messages: [{ role: 'user', content: [{ type: 'text', text: 'synthetic selection test' }] }] })) chunks.push(chunk);
+      assert.equal(chunks.filter(chunk => chunk.type === 'text-delta').map(chunk => chunk.text).join(''), model);
+      assert.equal(chunks.at(-1).type, 'finish');
+      assert.equal(chunks.some(chunk => chunk.type === 'reasoning-delta' && chunk.text === 'synthetic reasoning'), budget !== undefined);
+      assert.equal(requests.at(-1).url, '/v2/inference/deployments/shared-packed-deployment/v2/completion');
+      const params = requests.at(-1).body.config.modules.prompt_templating.model.params;
+      assert.equal(params.thinking_budget, budget);
+      assert.equal(params.enable_thinking, budget !== undefined);
+    }
   }
   const fiber = ctx.loader.resolve(sapId).fiber;
   ctx.loader.remove(sapId); await fiber.dispose();

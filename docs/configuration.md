@@ -7,9 +7,9 @@
 使用 DSH 插件安装界面安装 GitHub 仓库或 Release tgz。命令行方式如下；桌面版先正常退出应用，安装后重新打开：
 
 ~~~sh
-dsh plugin --profile desktop add github:solstice621/dsh-sap-ai-core#v0.1.0-rc.2
+dsh plugin --profile desktop add github:solstice621/dsh-sap-ai-core#v0.1.0-rc.3
 # 或使用预编译归档
-dsh plugin --profile desktop add /absolute/path/dsh-sap-ai-core-0.1.0-rc.2.tgz
+dsh plugin --profile desktop add /absolute/path/dsh-sap-ai-core-0.1.0-rc.3.tgz
 ~~~
 
 其他 CLI profile 使用其实际名称。bundle 自动注册 sap-ai-core 条目，初始 instances/providers 为空，不发网络请求。已有 DSH profile 必须提供 llm 和 credentials 服务。推荐将 [cn40 五模型 JSON](../examples/cn40-qwen/multi-models.json) 作为 profile 的 cordis.patch.yml 中现有 sap-ai-core 条目的 config，填入 OAuth host 和凭证引用。示例 provider 为 sap-ai-core-demo，五个模型共用该实例的认证和 Orchestration 部署。不要再次 insert 同一个插件。模型会进入 DSH provider/model 列表及 configurable-provider directory；OAuth client secret 流程在 Node 进程运行。
@@ -115,16 +115,16 @@ maxOutputTokens 是本配置允许的 maxTokens 上限，defaultMaxTokens 是缺
 
 ### 思考选项
 
-五模型预设通过 DSH 的公开 reasoning 元数据提供以下选项，默认 off：
+rc.3 五模型预设通过 DSH 的公开 reasoning 元数据提供以下选项，默认 high：
 
 | DSH 选项 | 发送到 SAP 的模型参数 |
 | --- | --- |
 | 关闭思考（off） | enable_thinking=false |
-| 低（low） | enable_thinking=true，thinking_budget=1024 |
-| 中（medium） | enable_thinking=true，thinking_budget=4096 |
-| 高（high） | enable_thinking=true，thinking_budget=16384 |
+| 低（low） | enable_thinking=true，thinking_budget=32000 |
+| 中（medium） | enable_thinking=true，thinking_budget=64000 |
+| 高（high，默认） | enable_thinking=true，thinking_budget=128000 |
 
-这些档位是可配置的思考预算预设。模型可以提前结束；提高预算允许更长的思考，并不要求用满。日常实例请求超时设置为 10 分钟，流空闲超时仍为 30 秒。选择一个模型的档位只影响该次调用，不改变其他模型或并发会话的设置。
+这些档位是可配置的思考预算预设，分别为 32,000、64,000、128,000 Token；不代表厂商保证的最大思维链长度。模型可以提前结束，简单任务也可能不产生思考 Token。日常实例请求超时设置为 30 分钟，以允许更长的思考；流空闲超时仍为 30 秒，取消仍立即传递。模型和服务自身的上限仍然适用。选择一个模型的档位只影响该次调用，不改变其他模型或并发会话的设置。
 
 SAP Orchestration 的 reasoning_content 是 content 块数组，插件转换成独立的 DSH reasoning 增量。文本与正文保持分离；含签名或不透明内容的 reasoning 暂不支持。默认不回传原生 reasoning 历史，五个模型的思考模式工具闭环已经验证。
 

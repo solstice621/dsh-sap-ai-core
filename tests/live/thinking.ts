@@ -28,6 +28,7 @@ for (const model of input.providers[provider].models) {
   model.compatibility.reasoningEfforts.probe = { name: 'Budget probe', parameters: { enable_thinking: true, thinking_budget: 64 } };
 }
 const report: Record<string, unknown> = { suite: 'cn40-thinking-efforts', startedAt: new Date().toISOString(), sourceSha256: await sourceFingerprint(), status: 'running', requestBudget: 35, maxAnswerTokens: 32, toolMaxAnswerTokens: 128, outputCharacterGuard: 4096, knownOutputTokenBudget: 12000, results: [] };
+report.thinkingPresets = configured.models.map(model => ({ model: model.upstreamModel, defaultEffort: model.compatibility.defaultReasoningEffort, budgets: Object.fromEntries(Object.entries(model.compatibility.reasoningEfforts).map(([effort, setting]) => [effort, setting.parameters.thinking_budget ?? null])) }));
 const results: Record<string, unknown>[] = [], attempts: AttemptDiagnostic[] = [];
 const host = await createDiagnosticHost(input, { serviceKeyFile: values['service-key'], serviceKeyInstance: values.instance, environment: {}, agents: true });
 host.ctx.on('sap-ai-core/attempt', event => attempts.push(event));
@@ -35,7 +36,7 @@ let failed = false;
 try {
   for (const model of configured.models) {
     assert.deepEqual(Object.keys(model.compatibility.reasoningEfforts), ['off', 'low', 'medium', 'high']);
-    assert.equal(model.compatibility.defaultReasoningEffort, 'off');
+    assert.equal(model.compatibility.defaultReasoningEffort, 'high');
   }
   for (const effort of ['off', 'low', 'medium', 'high']) {
     await Promise.all(configured.models.map(async model => {
